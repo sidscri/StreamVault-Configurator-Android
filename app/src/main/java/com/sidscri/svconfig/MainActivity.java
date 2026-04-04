@@ -106,7 +106,8 @@ public class MainActivity extends Activity {
             "  window.__svCb={};" +
             "  window.__svResolve=function(id,json){" +
             "    var fn=window.__svCb[id];" +
-            "    if(fn){delete window.__svCb[id];try{fn(JSON.parse(json));}catch(e){fn(null);}}" +
+            "    if(fn){delete window.__svCb[id];" +
+            "      try{fn(typeof json==='string'?JSON.parse(json):json);}catch(e){fn(null);}}" +
             "  };" +
             "  function wrap(method){" +
             "    return function(){" +
