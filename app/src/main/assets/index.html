@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1100">
+<title>StreamVault Configurator</title>
+<style>
+:root{
+  --bg:#0a0a0f;--c1:#12121a;--c2:#1a1a2e;--bd:#2a2a3a;
+  --ac:#6c5ce7;--acs:rgba(108,92,231,.15);--acsh:rgba(108,92,231,.25);
+  --t1:#e8e6f0;--t2:#9997aa;--t3:#55526a;
+  --gn:#2ecc71;--rd:#e74c3c;--or:#f39c12;--rs:8px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--t1);font-family:-apple-system,system-ui,sans-serif;font-size:13px;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* Top bar */
+#topbar{background:var(--c1);border-bottom:1px solid var(--bd);padding:8px 14px;display:flex;align-items:center;gap:8px;flex-shrink:0}
+#topbar h1{font-size:14px;font-weight:700;color:var(--ac);margin-right:4px}
+#file-label{font-size:10px;color:var(--t3);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tb{padding:5px 12px;border-radius:var(--rs);border:none;cursor:pointer;font-size:11px;font-weight:600;font-family:inherit}
+.tb-ghost{background:var(--c2);color:var(--t2);border:1px solid var(--bd)}
+.tb-ghost:hover{color:var(--t1);border-color:var(--ac)}
+.tb-primary{background:var(--ac);color:#fff}
+.tb-primary:hover{background:#7d6df0}
+.tb-green{background:#27ae60;color:#fff}
+.tb-green:hover{background:#2ecc71}
+
+/* Layout */
+#layout{display:flex;flex:1;overflow:hidden}
+
+/* Sidebar */
+#sidebar{width:172px;flex-shrink:0;background:var(--c1);border-right:1px solid var(--bd);padding:8px 0;overflow-y:auto}
+.nav-sec{padding:12px 14px 3px;font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.08em}
+.nav-item{padding:8px 14px;cursor:pointer;font-size:12px;color:var(--t2);border-left:3px solid transparent;display:flex;align-items:center;gap:7px}
+.nav-item:hover{background:var(--c2);color:var(--t1)}
+.nav-item.on{background:var(--acs);color:var(--ac);border-left-color:var(--ac);font-weight:600}
+.nav-badge{background:var(--ac);color:#fff;border-radius:10px;font-size:9px;padding:1px 5px;margin-left:auto}
+
+/* Content */
+#content{flex:1;overflow-y:auto;padding:18px 20px}
+.panel{display:none}.panel.on{display:block}
+.ph{font-size:16px;font-weight:700;margin-bottom:3px}
+.pd{font-size:11px;color:var(--t3);margin-bottom:16px}
+
+/* Settings section + row (matches app) */
+.ss{background:var(--c1);border:1px solid var(--bd);border-radius:var(--rs);padding:14px 16px;margin-bottom:12px}
+.ss h3{font-size:11px;font-weight:700;color:var(--ac);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em}
+.sr{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.sr:last-child{border-bottom:none}
+.sl{font-size:12px;color:var(--t1);flex:1}
+.sd{font-size:10px;color:var(--t3);margin-top:1px}
+
+/* Form */
+.field{margin-bottom:10px}
+.fl{display:block;font-size:10px;color:var(--t2);margin-bottom:3px}
+.field input,.field select,.field textarea,
+input[type=text],input[type=number],input[type=url],input[type=password],select,textarea{
+  width:100%;padding:6px 9px;background:var(--bg);border:1px solid var(--bd);
+  border-radius:6px;color:var(--t1);font-size:12px;font-family:inherit}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac)}
+.hint{font-size:10px;color:var(--t3);margin-top:2px}
+.rw{display:flex;gap:8px}.rw .field,.rw>div{flex:1}
+
+/* Buttons */
+.bs{background:var(--ac);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:11px;cursor:pointer;font-family:inherit}
+.bs:hover{background:#7d6df0}
+.bc{background:var(--c2);color:var(--t1);border:1px solid var(--bd);border-radius:6px;padding:6px 12px;font-size:11px;cursor:pointer;font-family:inherit}
+.bc:hover{border-color:var(--ac);color:var(--ac)}
+.btn-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+
+/* Toggle */
+.tgl{width:34px;height:19px;background:var(--bd);border-radius:10px;cursor:pointer;position:relative;flex-shrink:0;transition:background .2s}
+.tgl.on{background:var(--ac)}
+.tgl::after{content:'';position:absolute;width:15px;height:15px;background:#fff;border-radius:50%;top:2px;left:2px;transition:left .2s}
+.tgl.on::after{left:17px}
+
+/* Card */
+.card{background:var(--bg);border:1px solid var(--bd);border-radius:var(--rs);padding:12px;margin-bottom:8px}
+.card-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.card-name{flex:1;font-size:13px;font-weight:600}
+.del-btn{background:none;border:none;color:var(--t3);cursor:pointer;font-size:16px;padding:0 3px;line-height:1}
+.del-btn:hover{color:var(--rd)}
+
+/* Tags */
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0}
+.tag{display:inline-flex;align-items:center;gap:3px;background:var(--acs);color:var(--ac);border:1px solid var(--acsh);border-radius:4px;padding:2px 7px;font-size:11px}
+.tag button{background:none;border:none;color:var(--t3);cursor:pointer;font-size:11px;line-height:1;padding:0}
+.tag button:hover{color:var(--rd)}
+.tag-row{display:flex;gap:6px;margin-top:6px}
+.tag-row input{flex:1;padding:5px 8px;background:var(--bg);border:1px solid var(--bd);border-radius:6px;color:var(--t1);font-size:11px}
+
+/* ESPN chips */
+.esp-wrap{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+.esp-chip{padding:3px 9px;background:var(--c2);border:1px solid var(--bd);border-radius:4px;font-size:11px;cursor:pointer;color:var(--t2);user-select:none}
+.esp-chip.on{background:var(--acs);border-color:var(--ac);color:var(--ac)}
+
+/* Add button */
+.add-btn{display:flex;align-items:center;gap:6px;padding:7px 12px;background:var(--c2);border:1px dashed var(--bd);border-radius:var(--rs);cursor:pointer;color:var(--t2);font-size:12px;width:100%;margin-top:4px;font-family:inherit}
+.add-btn:hover{border-color:var(--ac);color:var(--ac)}
+
+/* Tab order */
+.tab-row{display:flex;align-items:center;gap:8px;background:var(--c2);padding:7px 10px;border-radius:6px;user-select:none;margin-bottom:4px}
+.tab-row span{flex:1;font-size:12px}
+.tab-row button{background:none;border:none;color:var(--t3);cursor:pointer;font-size:13px;padding:0 2px}
+.tab-row button:hover{color:var(--t1)}
+.tab-row button:disabled{opacity:.2;pointer-events:none}
+
+/* Status label */
+.status-ok{color:var(--gn);font-size:10px}
+.status-err{color:var(--rd);font-size:10px}
+
+/* JSON */
+#json-pre{background:var(--bg);border:1px solid var(--bd);border-radius:var(--rs);padding:12px;font-family:monospace;font-size:11px;color:var(--t2);white-space:pre-wrap;word-break:break-all;max-height:420px;overflow-y:auto}
+
+/* Footer */
+#statusbar{background:var(--c1);border-top:1px solid var(--bd);padding:4px 14px;font-size:10px;color:var(--t3);flex-shrink:0}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--ac);color:#fff;padding:8px 18px;border-radius:16px;font-size:12px;opacity:0;transition:all .25s;pointer-events:none;z-index:999}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+code{background:var(--c2);padding:1px 5px;border-radius:3px;font-size:10px}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <h1>⚙ StreamVault Configurator</h1><span style="font-size:9px;color:var(--t3);margin-left:-4px">v4.1.0 Android</span>
+  <span id="file-label">No file — click New or Open</span>
+  <button class="tb tb-ghost" onclick="newCfg()">New</button>
+  <button class="tb tb-ghost" onclick="openFile()">Open…</button>
+  <button class="tb tb-primary" onclick="saveFile()">Save As…</button>
+  <button class="tb tb-green" onclick="saveInject()">💾 Save to USB inject/</button>
+</div>
+
+<div id="layout">
+<div id="sidebar">
+  <div class="nav-sec">Streams</div>
+  <div class="nav-item on" data-p="repos"      onclick="nav(this)">📡 <span>Repos / M3U</span><span class="nav-badge" id="nb-repos">0</span></div>
+  <div class="nav-item"    data-p="channels"   onclick="nav(this)">📺 <span>ITV Channels</span><span class="nav-badge" id="nb-channels">0</span></div>
+  <div class="nav-item"    data-p="epg"        onclick="nav(this)">📅 <span>EPG</span><span class="nav-badge" id="nb-epg">0</span></div>
+  <div class="nav-item"    data-p="sports"     onclick="nav(this)">🏟 <span>Sports</span><span class="nav-badge" id="nb-sports">0</span></div>
+  <div class="nav-sec">Services</div>
+  <div class="nav-item"    data-p="plex"       onclick="nav(this)">🎬 <span>Plex / PlexStr</span></div>
+  <div class="nav-item"    data-p="dvr"        onclick="nav(this)">⏺ <span>DVR</span></div>
+  <div class="nav-item"    data-p="icam"       onclick="nav(this)">📷 <span>iCam</span><span class="nav-badge" id="nb-icam">0</span></div>
+  <div class="nav-item"    data-p="network"    onclick="nav(this)">🌐 <span>Network</span></div>
+  <div class="nav-item"    data-p="local"      onclick="nav(this)">📁 <span>Local Videos</span></div>
+  <div class="nav-sec">App</div>
+  <div class="nav-item"    data-p="general"    onclick="nav(this)">⚙ <span>General</span></div>
+  <div class="nav-item"    data-p="playback"   onclick="nav(this)">▶ <span>Playback</span></div>
+  <div class="nav-item"    data-p="localities" onclick="nav(this)">📍 <span>Localities</span></div>
+  <div class="nav-sec">Output</div>
+  <div class="nav-item"    data-p="preview"    onclick="nav(this)">{ } <span>JSON Preview</span></div>
+  <div class="nav-item"    data-p="inject"     onclick="nav(this)">⚡ <span>USB Inject</span></div>
+</div>
+
+<div id="content">
+
+<!-- ═══ REPOS ═══ -->
+<div class="panel on" id="panel-repos">
+  <div class="ph">Repos / M3U Sources</div>
+  <div class="pd">M3U playlist URLs. StreamVault fetches these on launch.</div>
+  <div id="repo-list"></div>
+  <button class="add-btn" onclick="addRepo()">＋ Add Repo</button>
+</div>
+
+<!-- ═══ ITV CHANNELS ═══ -->
+<div class="panel" id="panel-channels">
+  <div class="ph">ITV Channels</div>
+  <div class="pd">Pre-configure your ITV library. Channels appear in the Home/ITV tab and are available as the startup channel.</div>
+  <div class="ss">
+    <h3>Import from M3U</h3>
+    <div class="field">
+      <label class="fl">Paste M3U content or plain stream URLs (one per line)</label>
+      <textarea id="ch-m3u-paste" placeholder="#EXTM3U&#10;#EXTINF:-1 tvg-name=&quot;CNN&quot; group-title=&quot;News&quot;,CNN&#10;http://stream.example.com/cnn&#10;&#10;Or just paste URLs one per line" style="min-height:90px"></textarea>
+    </div>
+    <button class="bs" onclick="importChannelsPaste()">Import</button>
+  </div>
+  <div id="channel-list"></div>
+  <button class="add-btn" onclick="addChannel()">＋ Add Channel manually</button>
+</div>
+
+<!-- ═══ EPG ═══ -->
+<div class="panel" id="panel-epg">
+  <div class="ph">EPG Sources</div>
+  <div class="pd">XMLTV guide data — .xml or .xml.gz URLs</div>
+  <div id="epg-list"></div>
+  <button class="add-btn" onclick="addEpg()">＋ Add EPG Source</button>
+  <div id="epg-default-wrap" style="display:none;margin-top:12px">
+    <div class="ss">
+      <h3>Default EPG Source</h3>
+      <div class="field">
+        <label class="fl">Applied to new streams automatically</label>
+        <select id="sel-defaultEpg" onchange="cfg.settings.defaultEpgSource=this.value"></select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SPORTS ═══ -->
+<div class="panel" id="panel-sports">
+  <div class="ph">Live Sports</div>
+  <div class="pd">Configure leagues, ESPN paths, and pinned teams for My Teams Only filtering.</div>
+  <div class="ss">
+    <h3>Sport Filtering</h3>
+    <div class="sr">
+      <div><div class="sl">Enable "My Teams Only" filter</div><div class="sd">Show channels matching pinned teams first</div></div>
+      <div class="tgl on" id="tgl-sportFilter" onclick="tglSet(this,'sportLeagueFilterEnabled')"></div>
+    </div>
+    <div class="sr">
+      <div><div class="sl">Show past/completed games</div><div class="sd">Include finished games in the schedule</div></div>
+      <div class="tgl on" id="tgl-sportPast" onclick="tglSet(this,'sportShowPastGames')"></div>
+    </div>
+  </div>
+  <div class="ss">
+    <h3>① Add sport channel groups from a repo</h3>
+    <div class="rw" style="margin-bottom:6px">
+      <div class="field"><label class="fl">Repo</label>
+        <select id="sp-repo-sel" onchange="onRepoSelChange()"><option value="">— pick a repo —</option></select>
+      </div>
+    </div>
+    <div class="rw" style="margin-bottom:8px">
+      <div class="field"><label class="fl">Group</label>
+        <select id="sp-grp-sel"><option value="">— pick a group —</option></select>
+      </div>
+      <div style="display:flex;align-items:flex-end;padding-bottom:2px">
+        <button class="bs" onclick="addLeagueFromSel()">Add</button>
+      </div>
+    </div>
+    <button class="bc" style="width:100%" onclick="autoDetectLeagues()">🔍 Auto-detect sport groups from repos</button>
+  </div>
+  <div class="ss">
+    <h3>② Configure leagues &amp; pin your teams</h3>
+    <div id="league-list"><p style="font-size:11px;color:var(--t3)">No leagues added yet.</p></div>
+  </div>
+</div>
+
+<!-- ═══ PLEX ═══ -->
+<div class="panel" id="panel-plex">
+  <div class="ph">Plex / PlexStr</div>
+  <div class="pd">Connect to your Plex Media Server to add Plex streams to your library.</div>
+  <div class="ss">
+    <h3>Plex Server Connection</h3>
+    <div class="field">
+      <label class="fl">Server URL (include port)</label>
+      <input type="url" id="f-plex-server" placeholder="http://192.168.1.10:32400"
+        oninput="cfg.settings.plex.server=this.value">
+    </div>
+    <div class="field">
+      <label class="fl">Plex Token</label>
+      <input type="password" id="f-plex-token" placeholder="Plex X-Plex-Token"
+        oninput="cfg.settings.plex.token=this.value">
+      <div class="hint">Find your token: sign into Plex, open any media item's "Get Info", view the XML URL — the token is in the URL query string</div>
+    </div>
+    <div class="field">
+      <label class="fl">Default Library Section (optional)</label>
+      <input id="f-plex-section" placeholder="Leave blank to show all libraries"
+        oninput="cfg.settings.plex.section=this.value">
+    </div>
+    <div class="btn-row">
+      <button class="bc" onclick="testPlex()">🔗 Test Connection</button>
+      <button class="bc" onclick="clearPlex()">✕ Clear Plex</button>
+    </div>
+    <div id="plex-status" style="margin-top:8px;font-size:11px;color:var(--t3)">Not tested yet</div>
+  </div>
+  <div class="ss">
+    <h3>About PlexStr</h3>
+    <p style="font-size:11px;color:var(--t2);line-height:1.6">
+      PlexStr lets you add Plex library items (movies, TV episodes) directly into your StreamVault library.
+      Configure the server URL and token here, then use the <strong>PlexStr</strong> tab inside StreamVault
+      to search your Plex library and add items. Items appear in the <strong>PlexStr</strong> library tab.
+    </p>
+  </div>
+</div>
+
+<!-- ═══ DVR ═══ -->
+<div class="panel" id="panel-dvr">
+  <div class="ph">DVR / Remote Recording</div>
+  <div class="pd">Save recordings to a network device instead of the local Fire TV storage.</div>
+  <div class="ss">
+    <h3>Timeshift Buffer</h3>
+    <div class="sr">
+      <div><div class="sl">Enable Timeshift</div><div class="sd">Pause and rewind live TV</div></div>
+      <div class="tgl" id="tgl-ts2" onclick="tglSet(this,'timeshiftEnabled')"></div>
+    </div>
+    <div class="sr">
+      <div><div class="sl">Max buffer duration</div><div class="sd">How many minutes of live TV to keep in buffer</div></div>
+      <select id="sel-tsMax" onchange="cfg.settings.timeshiftMaxMin=+this.value" style="width:110px">
+        <option value="10">10 min</option>
+        <option value="30">30 min</option>
+        <option value="60">1 hour</option>
+        <option value="0">Unlimited</option>
+      </select>
+    </div>
+  </div>
+  <div class="ss">
+    <h3>Remote DVR Storage</h3>
+    <div class="sr" style="margin-bottom:6px">
+      <div><div class="sl">Enable remote DVR</div><div class="sd">Send recordings to a network server</div></div>
+      <div class="tgl" id="tgl-dvr" onclick="tglDvr(this)"></div>
+    </div>
+    <div id="dvr-cfg-wrap">
+      <div class="field" style="margin-top:8px">
+        <label class="fl">Protocol</label>
+        <select id="f-dvr-proto" onchange="cfg.settings.dvrCfg.proto=this.value">
+          <option value="ftp">FTP</option>
+          <option value="ftps">FTPS (FTP over SSL)</option>
+          <option value="smb">Samba / SMB</option>
+        </select>
+      </div>
+      <div class="rw">
+        <div class="field"><label class="fl">Host / IP</label>
+          <input id="f-dvr-host" placeholder="192.168.1.50" oninput="cfg.settings.dvrCfg.host=this.value">
+        </div>
+        <div class="field" style="max-width:100px"><label class="fl">Port</label>
+          <input type="number" id="f-dvr-port" placeholder="21" oninput="cfg.settings.dvrCfg.port=this.value">
+        </div>
+      </div>
+      <div class="rw">
+        <div class="field"><label class="fl">Username</label>
+          <input id="f-dvr-user" placeholder="Optional" autocomplete="username" oninput="cfg.settings.dvrCfg.user=this.value">
+        </div>
+        <div class="field"><label class="fl">Password</label>
+          <input type="password" id="f-dvr-pass" placeholder="Optional" autocomplete="current-password" oninput="cfg.settings.dvrCfg.pass=this.value">
+        </div>
+      </div>
+      <div class="field">
+        <label class="fl">Remote folder path</label>
+        <input id="f-dvr-path" placeholder="/recordings or /media/DVR" oninput="cfg.settings.dvrCfg.path=this.value">
+      </div>
+      <div class="hint" style="margin-top:4px">When configured, recordings and scheduled recordings are sent to this server. A DVR tab appears in the ITV page.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ICAM ═══ -->
+<div class="panel" id="panel-icam">
+  <div class="ph">iCam — IP Cameras</div>
+  <div class="pd">Add RTSP, ONVIF, RTMP, or SRT cameras. They appear in the iCam library tab.</div>
+  <div id="icam-list"></div>
+  <button class="add-btn" onclick="addCam()">＋ Add Camera</button>
+</div>
+
+<!-- ═══ NETWORK ═══ -->
+<div class="panel" id="panel-network">
+  <div class="ph">Network Sources</div>
+  <div class="pd">Samba/SMB and FTP network media sources. Appear in the Network library tab.</div>
+  <div class="ss">
+    <h3>LAN Discovery</h3>
+    <div class="sr">
+      <div><div class="sl">Auto-scan local network</div><div class="sd">Discover media servers at startup</div></div>
+      <div class="tgl" id="tgl-lanScan" onclick="tglNetCfg(this,'lanScanAuto')"></div>
+    </div>
+  </div>
+  <div class="ss">
+    <h3>Samba / SMB Share</h3>
+    <div class="rw">
+      <div class="field"><label class="fl">Host / IP</label>
+        <input id="f-smb-host" placeholder="192.168.1.10" oninput="cfg.settings.networkCfg['s-smb-host']=this.value">
+      </div>
+      <div class="field"><label class="fl">Share name</label>
+        <input id="f-smb-share" placeholder="Media" oninput="cfg.settings.networkCfg['s-smb-share']=this.value">
+      </div>
+    </div>
+    <div class="rw">
+      <div class="field"><label class="fl">Username</label>
+        <input id="f-smb-user" placeholder="Optional" autocomplete="username" oninput="cfg.settings.networkCfg['s-smb-user']=this.value">
+      </div>
+      <div class="field"><label class="fl">Password</label>
+        <input type="password" id="f-smb-pass" placeholder="Optional" autocomplete="current-password" oninput="cfg.settings.networkCfg['s-smb-pass']=this.value">
+      </div>
+    </div>
+  </div>
+  <div class="ss">
+    <h3>FTP Source</h3>
+    <div class="rw">
+      <div class="field"><label class="fl">FTP Host / URL</label>
+        <input id="f-ftp-host" placeholder="ftp://192.168.1.10" oninput="cfg.settings.networkCfg['s-ftp-host']=this.value">
+      </div>
+      <div class="field" style="max-width:100px"><label class="fl">Port</label>
+        <input type="number" id="f-ftp-port" placeholder="21" oninput="cfg.settings.networkCfg['s-ftp-port']=this.value">
+      </div>
+    </div>
+    <div class="rw">
+      <div class="field"><label class="fl">Username</label>
+        <input id="f-ftp-user" placeholder="anonymous" autocomplete="username" oninput="cfg.settings.networkCfg['s-ftp-user']=this.value">
+      </div>
+      <div class="field"><label class="fl">Password</label>
+        <input type="password" id="f-ftp-pass" placeholder="Optional" autocomplete="current-password" oninput="cfg.settings.networkCfg['s-ftp-pass']=this.value">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LOCAL ═══ -->
+<div class="panel" id="panel-local">
+  <div class="ph">Local Videos</div>
+  <div class="pd">On-device video files. Appear in the Local library tab.</div>
+  <div class="ss">
+    <h3>Local File Browsing</h3>
+    <div class="sr">
+      <div><div class="sl">Enable local file browsing</div><div class="sd">Browse device storage for video files</div></div>
+      <div class="tgl" id="tgl-localEnable" onclick="tglSet(this,'localEnable')"></div>
+    </div>
+    <div class="field" style="margin-top:10px">
+      <label class="fl">Default folder path</label>
+      <input id="f-localPath" placeholder="Movies, Downloads/Videos…"
+        oninput="cfg.settings.localPath=this.value">
+      <div class="hint">Leave blank to let the user choose on first launch. Supports relative paths like <code>Movies</code> or absolute paths like <code>/storage/emulated/0/Movies</code>.</div>
+    </div>
+    <p style="font-size:10px;color:var(--t3);margin-top:6px">Supports MP4, MKV, AVI, MOV, TS files.</p>
+  </div>
+</div>
+
+<!-- ═══ GENERAL ═══ -->
+<div class="panel" id="panel-general">
+  <div class="ph">General</div>
+  <div class="pd">App display and behaviour settings.</div>
+  <div class="ss">
+    <h3>Device Mode</h3>
+    <div class="sr">
+      <div><div class="sl">TV / D-pad mode</div><div class="sd">Large targets and remote navigation — always ON for Fire TV</div></div>
+      <select id="sel-tvMode" onchange="cfg.settings.tvMode=this.value" style="width:150px">
+        <option value="auto">Auto-detect</option>
+        <option value="on">Always ON (Fire TV)</option>
+        <option value="off">Always OFF (phone/tablet)</option>
+      </select>
+    </div>
+  </div>
+  <div class="ss">
+    <h3>Library Tab Order</h3>
+    <p style="font-size:11px;color:var(--t3);margin-bottom:8px">Determines the order of tabs in the library</p>
+    <div id="tab-order-list"></div>
+  </div>
+  <div class="ss">
+    <h3>Startup Channel</h3>
+    <div class="field">
+      <label class="fl">Auto-play on launch</label>
+      <select id="f-startupCh" onchange="cfg.settings.startupChannel=this.value"><option value="">— none —</option></select>
+      <div class="hint">Populated from ITV Channels you have added</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PLAYBACK ═══ -->
+<div class="panel" id="panel-playback">
+  <div class="ph">Playback &amp; Failover</div>
+  <div class="pd">Stream failover and timeshift settings.</div>
+  <div class="ss">
+    <h3>Failover</h3>
+    <div class="sr">
+      <div><div class="sl">Buffer timeout (seconds)</div><div class="sd">Switch to next stream after buffering this long</div></div>
+      <input type="number" id="f-foTimeout" min="5" max="60" style="width:70px"
+        oninput="cfg.settings.foTimeout=+this.value">
+    </div>
+    <div class="sr">
+      <div><div class="sl">Auto-failover</div><div class="sd">Automatically try next stream on failure</div></div>
+      <div class="tgl" id="tgl-foAuto" onclick="tglSet(this,'foAuto')"></div>
+    </div>
+    <div class="sr">
+      <div><div class="sl">Startup alt refresh</div><div class="sd">Re-scan alternatives in background on launch</div></div>
+      <div class="tgl" id="tgl-altCheck" onclick="tglSet(this,'autoAltCheck')"></div>
+    </div>
+  </div>
+  <div class="ss">
+    <h3>Timeshift</h3>
+    <div class="sr">
+      <div><div class="sl">Enable Timeshift</div><div class="sd">Pause and rewind live TV</div></div>
+      <div class="tgl" id="tgl-ts" onclick="tglSet(this,'timeshiftEnabled')"></div>
+    </div>
+    <div class="sr">
+      <div><div class="sl">Max buffer duration</div></div>
+      <select id="sel-tsMax2" onchange="cfg.settings.timeshiftMaxMin=+this.value;syncTsMax()" style="width:110px">
+        <option value="10">10 min</option>
+        <option value="30">30 min</option>
+        <option value="60">1 hour</option>
+        <option value="0">Unlimited</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LOCALITIES ═══ -->
+<div class="panel" id="panel-localities">
+  <div class="ph">Localities</div>
+  <div class="pd">City/region keywords — matching streams and EPG are boosted to the top of results.</div>
+  <div class="ss">
+    <h3>Your Locations</h3>
+    <div id="loc-tags"><span style="font-size:11px;color:var(--t3)">None set</span></div>
+    <div class="tag-row" style="margin-top:8px">
+      <input id="loc-in" placeholder="e.g. Dallas, Fort Worth, Tyler…" onkeydown="if(event.key==='Enter')addLoc()">
+      <button class="bs" onclick="addLoc()">Add</button>
+    </div>
+    <div class="hint" style="margin-top:6px">Streams and EPG channels containing these keywords are ranked higher in search and category lists.</div>
+  </div>
+</div>
+
+<!-- ═══ JSON PREVIEW ═══ -->
+<div class="panel" id="panel-preview">
+  <div class="ph">JSON Preview</div>
+  <div class="pd">The exact file that will be saved and injected into StreamVault.</div>
+  <div class="btn-row" style="margin-bottom:10px">
+    <button class="bc" onclick="updatePreview()">↻ Refresh</button>
+    <button class="bs" onclick="copyJson()">Copy to clipboard</button>
+  </div>
+  <pre id="json-pre">(nothing loaded)</pre>
+</div>
+
+<!-- ═══ USB INJECT ═══ --><div class="panel" id="panel-inject">
+  <div class="ph">⚡ USB Inject</div>
+  <div class="pd">Save config to a USB drive's <code>inject/</code> folder for automatic StreamVault import.</div>
+  <div class="ss">
+    <h3>Save to USB</h3>
+    <p style="font-size:12px;color:var(--t2);line-height:1.7;margin-bottom:12px">
+      1. Plug in USB drive<br>
+      2. Click below → select the USB drive root folder<br>
+      3. File saved as <code>inject/streamvault-backup-DATE.json</code><br>
+      4. On Fire TV: <strong>Settings → Backup &amp; Restore → ⚡ Inject from USB Drive</strong>
+    </p>
+    <button class="bs" style="width:100%;padding:10px" onclick="saveInject()">💾 Save to USB inject/ folder</button>
+  </div>
+  <div class="ss">
+    <h3>Scan drives for existing inject files</h3>
+    <button class="bc" onclick="scanDrives()">🔍 Scan all drives</button>
+    <div id="drive-results" style="margin-top:10px;font-size:12px;color:var(--t3)">Not scanned yet</div>
+  </div>
+
+  <div class="ss" style="border-top:1px solid var(--bd);margin-top:8px;padding-top:16px">
+    <h3 style="display:flex;align-items:center;gap:8px">📡 Network Inject <span style="font-size:10px;font-weight:400;color:var(--t3)">(same Wi-Fi / LAN)</span></h3>
+    <p style="font-size:12px;color:var(--t2);line-height:1.7;margin-bottom:12px">
+      Push settings wirelessly — no USB stick needed.<br>
+      StreamVault must be <strong>open and running</strong> on the Fire TV device.<br>
+      Enter the Fire TV's local IP address below.
+    </p>
+    <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center">
+      <div style="flex:1">
+        <label style="font-size:10px;color:var(--t3);display:block;margin-bottom:4px">Fire TV IP Address</label>
+        <input id="ni-ip" placeholder="192.168.1.xxx" autocomplete="off"
+          style="width:100%;padding:7px 9px;background:var(--c1);border:1px solid var(--bd);border-radius:var(--rs);color:var(--t1);font-size:13px;box-sizing:border-box"
+          oninput="niSaveIp(this.value)">
+      </div>
+      <div style="width:72px">
+        <label style="font-size:10px;color:var(--t3);display:block;margin-bottom:4px">Port</label>
+        <input id="ni-port" value="7654" autocomplete="off"
+          style="width:100%;padding:7px 6px;background:var(--c1);border:1px solid var(--bd);border-radius:var(--rs);color:var(--t1);font-size:13px;box-sizing:border-box;text-align:center">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button class="bc" style="flex:1;padding:8px" onclick="niPing()">🔍 Test Connection</button>
+      <button class="bs" id="ni-push-btn" style="flex:2;padding:8px" onclick="niPush()">📡 Push Settings to Fire TV</button>
+    </div>
+    <div id="ni-status" style="font-size:12px;color:var(--t3);min-height:18px"></div>
+  </div>
+</div>
+
+</div><!-- /content -->
+</div><!-- /layout -->
+<div id="statusbar">Ready — New for blank config, Open to load existing backup</div>
+<div id="toast"></div>
+
+<script>
+'use strict';
+
+// ═══ ESPN data ════════════════════════════════════════════════════════════════
+const ESPN_LEAGUE_MAP = [
+  {keys:['nfl','national football league'],               path:'football/nfl',                       label:'NFL'},
+  {keys:['mlb','major league baseball','baseball'],       path:'baseball/mlb',                       label:'MLB'},
+  {keys:['nba','national basketball'],                    path:'basketball/nba',                     label:'NBA'},
+  {keys:['nhl','national hockey','hockey'],               path:'hockey/nhl',                         label:'NHL'},
+  {keys:['mls','major league soccer'],                    path:'soccer/usa.1',                       label:'MLS'},
+  {keys:['wnba'],                                         path:'basketball/wnba',                    label:'WNBA'},
+  {keys:['premier league','epl','bpl'],                   path:'soccer/eng.1',                       label:'EPL'},
+  {keys:['la liga','laliga'],                             path:'soccer/esp.1',                       label:'La Liga'},
+  {keys:['bundesliga'],                                   path:'soccer/ger.1',                       label:'Bundesliga'},
+  {keys:['serie a'],                                      path:'soccer/ita.1',                       label:'Serie A'},
+  {keys:['ligue 1','ligue1'],                             path:'soccer/fra.1',                       label:'Ligue 1'},
+  {keys:['champions league','ucl'],                       path:'soccer/uefa.champions',              label:'UCL'},
+  {keys:['ncaa football','cfb','college football'],       path:'football/college-football',          label:'CFB'},
+  {keys:['ncaa basketball','ncaab','college basketball'], path:'basketball/mens-college-basketball', label:'NCAAB'},
+  {keys:['liga mx'],                                      path:'soccer/mex.1',                       label:'Liga MX'},
+  {keys:['ufc','mma','ultimate fighting'],                path:'mma/ufc',                            label:'UFC/MMA'},
+  {keys:['boxing','ppv boxing'],                          path:'boxing/boxing',                      label:'Boxing'},
+  {keys:['f1','formula 1','formula one'],                 path:'racing/f1',                          label:'F1'},
+  {keys:['nascar'],                                       path:'racing/nascar',                      label:'NASCAR'},
+  {keys:['tennis','atp','wta'],                           path:'tennis/atp',                         label:'Tennis'},
+  {keys:['golf','pga'],                                   path:'golf/leaderboard',                   label:'Golf'},
+  {keys:['cricket'],                                      path:'cricket/icc-cricket',                label:'Cricket'},
+  {keys:['ufc','mma'],                                    path:'mma/ufc',                            label:'UFC/MMA'},
+  {keys:['boxing'],                                       path:'boxing/boxing',                      label:'Boxing'},
+  {keys:['f1','formula 1','formula one'],                 path:'racing/f1',                          label:'F1'},
+  {keys:['nascar'],                                       path:'racing/nascar',                      label:'NASCAR'},
+  {keys:['tennis'],                                       path:'tennis/atp',                         label:'Tennis'},
+  {keys:['golf'],                                         path:'golf/leaderboard',                   label:'Golf'},
+];
+const SPORT_KW = ESPN_LEAGUE_MAP.flatMap(e=>e.keys).concat([
+  'sport','sports','ufc','mma','boxing','rugby','cricket','tennis','golf','nascar',
+  'f1','formula','afl','cfl','lacrosse','softball','racing','fight',
+]);
+function guessEspnPaths(name) {
+  const gl=name.toLowerCase();
+  if (/\bsports?\b/.test(gl)&&!ESPN_LEAGUE_MAP.some(e=>e.keys.some(k=>gl.includes(k)&&k.length>6)))
+    return ['baseball/mlb','football/nfl','hockey/nhl','basketball/nba'];
+  if (/\bppv\b|pay.per.view|combat sport|fight night/i.test(gl))
+    return ['mma/ufc','boxing/boxing'];
+  const p=[];
+  for (const e of ESPN_LEAGUE_MAP) if (e.keys.some(k=>gl.includes(k))&&!p.includes(e.path)) p.push(e.path);
+  return p;
+}
+function isSportGroup(n){const l=n.toLowerCase();return SPORT_KW.some(k=>l.includes(k))}
+
+// ═══ State ════════════════════════════════════════════════════════════════════
+const TAB_LABELS={itv:'ITV',plex:'PlexStr',icam:'iCam',local:'Local',network:'Network'};
+const repoStreams={};
+let cfg=blank(), filePath=null;
+
+function blank(){return{
+  type:'streamvault-backup',version:'5.1.5',build:88,exportedAt:Date.now(),
+  items:[],repos:[],epgSrc:[],epgData:{channels:{},programs:{}},
+  settings:{
+    localities:[],startupChannel:'',defaultEpgSource:'',foTimeout:15,
+    foAuto:true,autoAltCheck:true,altCache:{},altLastCheck:0,
+    savePath:'',savePathLabel:'',backupPath:'',backupPathLabel:'',
+    schedules:[],tabOrder:['itv','plex','icam','local','network'],
+    tvMode:'on',plex:{server:'',token:'',section:'',sections:[]},
+    timeshiftEnabled:true,timeshiftMaxMin:30,
+    dvrCfg:{remoteEnabled:false,proto:'ftp',host:'',port:'21',user:'',pass:'',path:'/recordings'},
+    sportLeagueFilterEnabled:true,sportLeagues:[],sportShowPastGames:true,
+    localEnable:true,localPath:'',
+    icamCfg:{proto:'rtsp',host:'',port:'554',user:'',pass:'',name:''},
+    networkCfg:{lanScanAuto:false},
+  },
+};}
+
+// ═══ Nav ══════════════════════════════════════════════════════════════════════
+function nav(el){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  el.classList.add('on');
+  const p=document.getElementById('panel-'+el.dataset.p);
+  if(p) p.classList.add('on');
+  if(el.dataset.p==='preview') updatePreview();
+}
+
+// ═══ Utilities ════════════════════════════════════════════════════════════════
+function esc(s){const d=document.createElement('div');d.textContent=String(s||'');return d.innerHTML}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800)}
+function status(m){document.getElementById('statusbar').textContent=m}
+function gi(id){return document.getElementById(id)}
+function sv(id,v){const e=gi(id);if(e&&v!=null)e.value=String(v)}
+function tglSet(el,key){cfg.settings[key]=!cfg.settings[key];el.classList.toggle('on',!!cfg.settings[key])}
+function syncTgl(id,val){const e=gi(id);if(e)e.classList.toggle('on',!!val)}
+function updateBadges(){
+  gi('nb-channels').textContent=(cfg.items||[]).length;
+  gi('nb-repos').textContent=(cfg.repos||[]).length;
+  gi('nb-epg').textContent=(cfg.epgSrc||[]).length;
+  gi('nb-sports').textContent=(cfg.settings.sportLeagues||[]).length;
+  gi('nb-icam').textContent=getCams().length;
+}
+
+// ═══ ITV CHANNELS ════════════════════════════════════════════════════════════
+function renderChannels(){
+  const el=gi('channel-list');if(!el)return;
+  if(!cfg.items)cfg.items=[];
+  el.innerHTML=cfg.items.length?cfg.items.map((m,i)=>`
+    <div class="card">
+      <div class="card-head">
+        <div class="card-name">${esc(m.title||m.name||'Unnamed Channel')}</div>
+        <button class="del-btn" onclick="rmChannel(${i})">✕</button>
+      </div>
+      <div class="rw">
+        <div class="field" style="flex:2"><label class="fl">Title</label>
+          <input value="${esc(m.title||m.name||'')}" placeholder="Channel Name"
+            oninput="cfg.items[${i}].title=this.value;cfg.items[${i}].name=this.value;renderStartupSel()">
+        </div>
+        <div class="field"><label class="fl">Category</label>
+          <input value="${esc(m.category||'')}" placeholder="News, Sports…"
+            oninput="cfg.items[${i}].category=this.value">
+        </div>
+      </div>
+      <div class="field"><label class="fl">Stream URL</label>
+        <input type="url" value="${esc(m.url||'')}" placeholder="http://stream.example.com/live.m3u8"
+          oninput="cfg.items[${i}].url=this.value">
+      </div>
+      <div class="rw">
+        <div class="field"><label class="fl">EPG ID (tvg-id)</label>
+          <input value="${esc(m.epgTitle||'')}" placeholder="CNN.us"
+            oninput="cfg.items[${i}].epgTitle=this.value">
+        </div>
+        <div class="field"><label class="fl">Logo URL</label>
+          <input type="url" value="${esc(m.icon||'')}" placeholder="https://logo.png"
+            oninput="cfg.items[${i}].icon=this.value">
+        </div>
+      </div>
+    </div>`).join(''):'<p style="font-size:11px;color:var(--t3)">No channels yet. Use Import or Add Channel.</p>';
+  updateBadges();renderStartupSel();
+}
+function addChannel(){
+  if(!cfg.items)cfg.items=[];
+  cfg.items.push({id:uid(),title:'',name:'',url:'',category:'',icon:'',epgTitle:'',epgLink:'',region:'',tags:[],baseName:''});
+  renderChannels();
+}
+function rmChannel(i){
+  if(cfg.settings.startupChannel===cfg.items[i].id)cfg.settings.startupChannel='';
+  cfg.items.splice(i,1);renderChannels();
+}
+function importChannelsPaste(){
+  const txt=(gi('ch-m3u-paste').value||'').trim();
+  if(!txt){toast('Paste M3U or URLs first');return;}
+  if(!cfg.items)cfg.items=[];
+  let added=0;
+  if(txt.includes('#EXTINF')){
+    const lines=txt.split(/\r?\n/);let cur=null;
+    for(const raw of lines){
+      const line=raw.trim();
+      if(!line||line==='#EXTM3U')continue;
+      if(line.startsWith('#EXTINF:')){
+        cur={id:uid(),title:'',name:'',url:'',category:'',icon:'',epgTitle:'',epgLink:'',region:'',tags:[],baseName:''};
+        const tvgName=line.match(/tvg-name="([^"]+)"/i);const tvgId=line.match(/tvg-id="([^"]+)"/i);
+        const logo=line.match(/tvg-logo="([^"]+)"/i);const group=line.match(/group-title="([^"]+)"/i);
+        const ci=line.lastIndexOf(',');
+        cur.title=cur.name=(tvgName?tvgName[1]:ci>=0?line.slice(ci+1).trim():'')||'Channel';
+        cur.epgTitle=tvgId?tvgId[1]:'';cur.icon=logo?logo[1]:'';cur.category=group?group[1]:'';
+      }else if(line.match(/^https?:\/\//i)&&cur){
+        cur.url=line;cur.baseName=cur.title.toLowerCase().trim();
+        cfg.items.push(cur);cur=null;added++;
+      }
+    }
+  }else{
+    txt.split(/\r?\n/).forEach(line=>{
+      line=line.trim();
+      if(!line.match(/^https?:\/\//i))return;
+      const title=line.split('/').pop().replace(/\.[^.]+$/,'').replace(/[-_]/g,' ')||'Channel';
+      cfg.items.push({id:uid(),title,name:title,url:line,category:'',icon:'',epgTitle:'',epgLink:'',region:'',tags:[],baseName:title.toLowerCase()});
+      added++;
+    });
+  }
+  gi('ch-m3u-paste').value='';renderChannels();
+  toast(added+' channel'+(added!==1?'s':'')+' imported');
+}
+function renderStartupSel(){
+  const sel=gi('f-startupCh');if(!sel)return;
+  const cur=cfg.settings.startupChannel||'';
+  sel.innerHTML='<option value="">— none —</option>'+
+    (cfg.items||[]).filter(m=>m.url).map(m=>
+      `<option value="${esc(m.id)}"${m.id===cur?' selected':''}>${esc(m.title||m.name||m.url)}</option>`
+    ).join('');
+}
+
+// ═══ REPOS ════════════════════════════════════════════════════════════════════
+function renderRepos(){
+  const el=gi('repo-list');if(!el)return;
+  el.innerHTML=(cfg.repos||[]).map((r,i)=>`
+    <div class="card">
+      <div class="card-head">
+        <div class="card-name">${esc(r.name||'Unnamed Repo')}</div>
+        <button class="del-btn" onclick="rmRepo(${i})">✕</button>
+      </div>
+      <div class="field"><label class="fl">Name</label>
+        <input value="${esc(r.name||'')}" oninput="cfg.repos[${i}].name=this.value;renderSportRepoSel()">
+      </div>
+      <div class="field"><label class="fl">M3U URL</label>
+        <input type="url" value="${esc(r.sourceUrl||'')}" placeholder="https://provider.com/playlist.m3u"
+          oninput="cfg.repos[${i}].sourceUrl=this.value">
+        <div class="hint">StreamVault fetches this on launch to get all channels and groups</div>
+      </div>
+    </div>`).join('');
+  updateBadges();renderSportRepoSel();renderEpgDefault();
+}
+function addRepo(){if(!cfg.repos)cfg.repos=[];cfg.repos.push({id:uid(),name:'My Repo',sourceUrl:'',addedAt:Date.now(),streams:[]});renderRepos()}
+function rmRepo(i){cfg.repos.splice(i,1);renderRepos()}
+
+// ═══ EPG ══════════════════════════════════════════════════════════════════════
+function renderEpg(){
+  const el=gi('epg-list');if(!el)return;
+  el.innerHTML=(cfg.epgSrc||[]).map((s,i)=>`
+    <div class="card">
+      <div class="card-head">
+        <div class="card-name">${esc(s.name||'EPG Source')}</div>
+        <button class="del-btn" onclick="rmEpg(${i})">✕</button>
+      </div>
+      <div class="rw">
+        <div class="field"><label class="fl">Name</label>
+          <input value="${esc(s.name||'')}" oninput="cfg.epgSrc[${i}].name=this.value;renderEpgDefault()">
+        </div>
+        <div class="field" style="flex:2"><label class="fl">URL (.xml or .xml.gz)</label>
+          <input type="url" value="${esc(s.url||'')}" placeholder="https://..." oninput="cfg.epgSrc[${i}].url=this.value">
+        </div>
+      </div>
+    </div>`).join('');
+  renderEpgDefault();updateBadges();
+}
+function addEpg(){if(!cfg.epgSrc)cfg.epgSrc=[];cfg.epgSrc.push({id:uid(),name:'EPG Source',url:'',lastFetch:0,chCount:0});renderEpg()}
+function rmEpg(i){cfg.epgSrc.splice(i,1);renderEpg()}
+function renderEpgDefault(){
+  const wrap=gi('epg-default-wrap'),sel=gi('sel-defaultEpg');
+  if(!wrap||!sel)return;
+  const srcs=(cfg.epgSrc||[]).filter(s=>s.url);
+  wrap.style.display=srcs.length?'':'none';
+  if(!srcs.length)return;
+  const cur=cfg.settings.defaultEpgSource||'';
+  sel.innerHTML='<option value="">— none —</option>'+
+    srcs.map(s=>`<option value="${esc(s.url)}"${s.url===cur?' selected':''}>${esc(s.name||s.url)}</option>`).join('');
+}
+
+// ═══ SPORTS ═══════════════════════════════════════════════════════════════════
+function renderSportRepoSel(){
+  const sel=gi('sp-repo-sel');if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— pick a repo —</option>'+
+    (cfg.repos||[]).map(r=>`<option value="${esc(r.id)}">${esc(r.name)}</option>`).join('');
+  if(cur)sel.value=cur;
+}
+async function onRepoSelChange(){
+  const sel=gi('sp-repo-sel'),gsel=gi('sp-grp-sel');if(!sel||!gsel)return;
+  gsel.innerHTML='<option value="">— loading… —</option>';
+  const repoId=sel.value;
+  if(!repoId){gsel.innerHTML='<option value="">— pick a group —</option>';return;}
+  const repo=(cfg.repos||[]).find(r=>r.id===repoId);
+  if(!repo||!repo.sourceUrl){gsel.innerHTML='<option value="">— add repo URL first —</option>';return;}
+  if(repoStreams[repoId]){populateGroupSel(repoId);return;}
+  try{
+    status('Fetching groups from '+repo.name+'…');
+    const resp=await fetch(repo.sourceUrl);
+    if(!resp.ok)throw new Error('HTTP '+resp.status);
+    const cats=new Set();
+    (await resp.text()).split(/\r?\n/).forEach(l=>{
+      if(!l.startsWith('#EXTINF'))return;
+      const m=l.match(/group-title="([^"]+)"/i);if(m)cats.add(m[1]);
+    });
+    repoStreams[repoId]=Array.from(cats).sort().map(c=>({category:c}));
+    status('Loaded '+cats.size+' groups from '+repo.name);
+    populateGroupSel(repoId);
+  }catch(e){
+    status('Could not fetch repo: '+e.message);
+    gsel.innerHTML='<option value="">— could not fetch; type manually —</option>';
+  }
+}
+function populateGroupSel(repoId){
+  const gsel=gi('sp-grp-sel');if(!gsel)return;
+  const streams=repoStreams[repoId]||[];
+  const existing=new Set((cfg.settings.sportLeagues||[]).map(l=>l.groupName));
+  const sg=streams.filter(s=>isSportGroup(s.category)&&!existing.has(s.category));
+  const og=streams.filter(s=>!isSportGroup(s.category)&&!existing.has(s.category));
+  let h='<option value="">— pick a group —</option>';
+  if(sg.length)h+='<optgroup label="Sport groups">'+sg.map(s=>`<option value="${esc(s.category)}">${esc(s.category)}</option>`).join('')+'</optgroup>';
+  if(og.length)h+='<optgroup label="Other groups">'+og.map(s=>`<option value="${esc(s.category)}">${esc(s.category)}</option>`).join('')+'</optgroup>';
+  if(!sg.length&&!og.length)h+='<option disabled>All groups already added</option>';
+  gsel.innerHTML=h;
+}
+function addLeagueFromSel(){
+  const repoSel=gi('sp-repo-sel'),grpSel=gi('sp-grp-sel');
+  const repoId=repoSel?repoSel.value:'';
+  const grpName=grpSel?grpSel.value:'';
+  if(!grpName){toast('Select a group first');return;}
+  if(!cfg.settings.sportLeagues)cfg.settings.sportLeagues=[];
+  if(cfg.settings.sportLeagues.find(l=>l.groupName===grpName)){toast('Already added');return;}
+  const paths=guessEspnPaths(grpName);
+  cfg.settings.sportLeagues.push({groupName:grpName,repoId:repoId||'',enabled:false,espnPaths:paths,pinnedTeams:[],cachedGamesByPath:{},cacheDate:''});
+  if(grpSel){const o=Array.from(grpSel.options).find(o=>o.value===grpName);if(o)o.remove();grpSel.value='';}
+  renderLeagues();updateBadges();
+  toast('Added: '+grpName+(paths.length?' · ESPN: '+paths.map(p=>{const e=ESPN_LEAGUE_MAP.find(x=>x.path===p);return e?e.label:p}).join(', '):''));
+}
+async function autoDetectLeagues(){
+  if(!(cfg.repos||[]).length){toast('Add at least one repo first');return;}
+  status('Auto-detecting sport groups…');let added=0;
+  for(const repo of cfg.repos){
+    if(!repo.sourceUrl)continue;
+    try{
+      if(!repoStreams[repo.id]){
+        const resp=await fetch(repo.sourceUrl);if(!resp.ok)continue;
+        const cats=new Set();
+        (await resp.text()).split(/\r?\n/).forEach(l=>{if(!l.startsWith('#EXTINF'))return;const m=l.match(/group-title="([^"]+)"/i);if(m)cats.add(m[1]);});
+        repoStreams[repo.id]=Array.from(cats).sort().map(c=>({category:c}));
+      }
+      for(const{category}of repoStreams[repo.id]){
+        if(!isSportGroup(category))continue;
+        if((cfg.settings.sportLeagues||[]).find(l=>l.groupName===category))continue;
+        if(!cfg.settings.sportLeagues)cfg.settings.sportLeagues=[];
+        cfg.settings.sportLeagues.push({groupName:category,repoId:repo.id,enabled:false,espnPaths:guessEspnPaths(category),pinnedTeams:[],cachedGamesByPath:{},cacheDate:''});
+        added++;
+      }
+    }catch(e){console.warn('Auto-detect failed',repo.name,e.message);}
+  }
+  if(!added){toast('No sport groups found — check repo URLs');return;}
+  renderLeagues();updateBadges();
+  if(gi('sp-repo-sel')?.value)populateGroupSel(gi('sp-repo-sel').value);
+  toast(added+' group'+(added!==1?'s':'')+' auto-detected');
+  status('Auto-detect: '+added+' groups added');
+}
+function renderLeagues(){
+  const el=gi('league-list');if(!el)return;
+  const lgs=cfg.settings.sportLeagues||[];
+  if(!lgs.length){el.innerHTML='<p style="font-size:11px;color:var(--t3)">No leagues added yet. Use ① above to add.</p>';return;}
+  el.innerHTML=lgs.map((lg,i)=>{
+    const pins=(lg.pinnedTeams||[]).map((p,pi)=>`<span class="tag">${esc(p)}<button onclick="rmPin(${i},${pi})">✕</button></span>`).join('');
+    const selP=new Set(lg.espnPaths||[]);
+    const chips=ESPN_LEAGUE_MAP.map(ep=>`<span class="esp-chip${selP.has(ep.path)?' on':''}" onclick="togglePath(${i},'${ep.path}',this)">${esc(ep.label)}</span>`).join('');
+    const repoName=lg.repoId?((cfg.repos||[]).find(r=>r.id===lg.repoId)||{}).name||'Repo':'Library';
+    return `<div class="card">
+      <div class="card-head">
+        <div class="card-name">${esc(lg.groupName)}</div>
+        <span style="font-size:10px;color:var(--t3)">${esc(repoName)}</span>
+        <div class="tgl${lg.enabled?' on':''}" onclick="toggleLg(${i},this)" title="Per-league filter toggle"></div>
+        <span style="font-size:10px;color:${lg.enabled?'var(--ac)':'var(--t3)'}">Filter ${lg.enabled?'ON':'OFF'}</span>
+        <button class="del-btn" onclick="rmLeague(${i})">✕</button>
+      </div>
+      <div class="field" style="margin-bottom:6px"><label class="fl">Group name (must match M3U category exactly)</label>
+        <input value="${esc(lg.groupName)}" oninput="cfg.settings.sportLeagues[${i}].groupName=this.value">
+      </div>
+      <div class="field" style="margin-bottom:6px"><label class="fl">ESPN schedule paths — click to toggle</label>
+        <div class="esp-wrap">${chips}</div>
+      </div>
+      <div class="field"><label class="fl">📌 Pinned teams (My Teams Only filter + team pill tabs)</label>
+        <div class="tags" id="pins-${i}">${pins||'<span style="font-size:10px;color:var(--t3)">None pinned</span>'}</div>
+        <div class="tag-row">
+          <input id="pin-in-${i}" placeholder="e.g. Rangers, Cowboys, Stars…" onkeydown="if(event.key==='Enter'){event.preventDefault();addPin(${i})}">
+          <button class="bs" onclick="addPin(${i})">Pin</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleLg(i,el){cfg.settings.sportLeagues[i].enabled=!cfg.settings.sportLeagues[i].enabled;el.classList.toggle('on');}
+function togglePath(i,path,el){const arr=cfg.settings.sportLeagues[i].espnPaths||[];const ix=arr.indexOf(path);if(ix>=0)arr.splice(ix,1);else arr.push(path);cfg.settings.sportLeagues[i].espnPaths=arr;el.classList.toggle('on');}
+function rmLeague(i){cfg.settings.sportLeagues.splice(i,1);renderLeagues();updateBadges();}
+function addPin(i){const inp=gi('pin-in-'+i);const val=inp&&inp.value.trim().toLowerCase();if(!val)return;if(!cfg.settings.sportLeagues[i].pinnedTeams)cfg.settings.sportLeagues[i].pinnedTeams=[];if(!cfg.settings.sportLeagues[i].pinnedTeams.includes(val))cfg.settings.sportLeagues[i].pinnedTeams.push(val);if(inp)inp.value='';const pe=gi('pins-'+i);if(pe)pe.innerHTML=cfg.settings.sportLeagues[i].pinnedTeams.map((p,pi)=>`<span class="tag">${esc(p)}<button onclick="rmPin(${i},${pi})">✕</button></span>`).join('');}
+function rmPin(i,pi){cfg.settings.sportLeagues[i].pinnedTeams.splice(pi,1);renderLeagues();}
+
+// ═══ PLEX ═════════════════════════════════════════════════════════════════════
+function renderPlex(){
+  if(!cfg.settings.plex)cfg.settings.plex={server:'',token:'',section:'',sections:[]};
+  sv('f-plex-server',cfg.settings.plex.server);
+  sv('f-plex-token',cfg.settings.plex.token);
+  sv('f-plex-section',cfg.settings.plex.section);
+  gi('plex-status').textContent='Not tested yet';
+  gi('plex-status').className='';
+}
+async function testPlex(){
+  const server=(gi('f-plex-server').value||'').trim().replace(/\/$/,'');
+  const token=(gi('f-plex-token').value||'').trim();
+  const statusEl=gi('plex-status');
+  cfg.settings.plex.server=server;cfg.settings.plex.token=token;
+  if(!server||!token){statusEl.textContent='Enter server URL and token first';statusEl.className='status-err';return;}
+  statusEl.textContent='Connecting…';statusEl.className='';
+  try{
+    const url=server+'/library/sections?X-Plex-Token='+encodeURIComponent(token);
+    const resp=await fetch(url);
+    if(!resp.ok)throw new Error('HTTP '+resp.status);
+    const doc=new DOMParser().parseFromString(await resp.text(),'text/xml');
+    const sections=Array.from(doc.querySelectorAll('Directory')).map(el=>({key:el.getAttribute('key')||'',title:el.getAttribute('title')||'Library',type:el.getAttribute('type')||''})).filter(x=>x.key);
+    cfg.settings.plex.sections=sections;
+    statusEl.textContent='✓ Connected · '+sections.length+' librar'+(sections.length!==1?'ies':'y')+': '+sections.map(s=>s.title).join(', ');
+    statusEl.className='status-ok';
+    toast('Plex connected ✓');
+  }catch(e){statusEl.textContent='✗ Connection failed: '+e.message;statusEl.className='status-err';}
+}
+function clearPlex(){cfg.settings.plex={server:'',token:'',section:'',sections:[]};renderPlex();toast('Plex cleared');}
+
+// ═══ DVR ══════════════════════════════════════════════════════════════════════
+function tglDvr(el){
+  cfg.settings.dvrCfg.remoteEnabled=!cfg.settings.dvrCfg.remoteEnabled;
+  el.classList.toggle('on',cfg.settings.dvrCfg.remoteEnabled);
+}
+function renderDvr(){
+  if(!cfg.settings.dvrCfg)cfg.settings.dvrCfg={remoteEnabled:false,proto:'ftp',host:'',port:'21',user:'',pass:'',path:'/recordings'};
+  const d=cfg.settings.dvrCfg;
+  syncTgl('tgl-dvr',d.remoteEnabled);
+  syncTgl('tgl-ts2',cfg.settings.timeshiftEnabled!==false);
+  sv('sel-tsMax',String(cfg.settings.timeshiftMaxMin||30));
+  sv('f-dvr-proto',d.proto||'ftp');
+  sv('f-dvr-host',d.host);sv('f-dvr-port',d.port);
+  sv('f-dvr-user',d.user);sv('f-dvr-pass',d.pass);
+  sv('f-dvr-path',d.path);
+}
+
+// ═══ iCAM ═════════════════════════════════════════════════════════════════════
+function getCams(){
+  if(!cfg.settings.icamCfg)cfg.settings.icamCfg={};
+  return cfg.settings.icamCfg.cameras||[];
+}
+function renderIcam(){
+  if(!cfg.settings.icamCfg)cfg.settings.icamCfg={};
+  if(!cfg.settings.icamCfg.cameras)cfg.settings.icamCfg.cameras=[];
+  const el=gi('icam-list');if(!el)return;
+  const cams=cfg.settings.icamCfg.cameras;
+  el.innerHTML=cams.length?cams.map((cam,i)=>`
+    <div class="card">
+      <div class="card-head">
+        <div class="card-name">${esc(cam.name||'Camera '+(i+1))}</div>
+        <button class="del-btn" onclick="rmCam(${i})">✕</button>
+      </div>
+      <div class="rw">
+        <div class="field"><label class="fl">Protocol</label>
+          <select onchange="cfg.settings.icamCfg.cameras[${i}].proto=this.value">
+            ${['rtsp','onvif','rtmp','srt'].map(p=>`<option${cam.proto===p?' selected':''}>${p.toUpperCase()}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field" style="flex:2"><label class="fl">Host / Stream URL</label>
+          <input value="${esc(cam.host||'')}" placeholder="192.168.1.50 or rtsp://…/stream"
+            oninput="cfg.settings.icamCfg.cameras[${i}].host=this.value">
+        </div>
+        <div class="field" style="max-width:90px"><label class="fl">Port</label>
+          <input type="number" value="${esc(cam.port||'554')}" placeholder="554"
+            oninput="cfg.settings.icamCfg.cameras[${i}].port=this.value">
+        </div>
+      </div>
+      <div class="rw">
+        <div class="field"><label class="fl">Username</label>
+          <input value="${esc(cam.user||'')}" placeholder="admin" autocomplete="username"
+            oninput="cfg.settings.icamCfg.cameras[${i}].user=this.value">
+        </div>
+        <div class="field"><label class="fl">Password</label>
+          <input type="password" value="${esc(cam.pass||'')}" placeholder="••••••"
+            oninput="cfg.settings.icamCfg.cameras[${i}].pass=this.value">
+        </div>
+      </div>
+      <div class="field"><label class="fl">Camera Name</label>
+        <input value="${esc(cam.name||'')}" placeholder="Front Door, Driveway…"
+          oninput="cfg.settings.icamCfg.cameras[${i}].name=this.value">
+      </div>
+    </div>`).join(''):'<p style="font-size:11px;color:var(--t3)">No cameras configured yet.</p>';
+  updateBadges();
+}
+function addCam(){
+  if(!cfg.settings.icamCfg)cfg.settings.icamCfg={};
+  if(!cfg.settings.icamCfg.cameras)cfg.settings.icamCfg.cameras=[];
+  cfg.settings.icamCfg.cameras.push({proto:'rtsp',host:'',port:'554',user:'',pass:'',name:''});
+  renderIcam();
+}
+function rmCam(i){cfg.settings.icamCfg.cameras.splice(i,1);renderIcam();}
+
+// ═══ NETWORK ══════════════════════════════════════════════════════════════════
+function tglNetCfg(el,key){
+  if(!cfg.settings.networkCfg)cfg.settings.networkCfg={};
+  cfg.settings.networkCfg[key]=!cfg.settings.networkCfg[key];
+  el.classList.toggle('on',!!cfg.settings.networkCfg[key]);
+}
+function renderNetwork(){
+  if(!cfg.settings.networkCfg)cfg.settings.networkCfg={};
+  const nc=cfg.settings.networkCfg;
+  syncTgl('tgl-lanScan',!!nc.lanScanAuto);
+  sv('f-smb-host',nc['s-smb-host']);sv('f-smb-share',nc['s-smb-share']);
+  sv('f-smb-user',nc['s-smb-user']);sv('f-smb-pass',nc['s-smb-pass']);
+  sv('f-ftp-host',nc['s-ftp-host']);sv('f-ftp-port',nc['s-ftp-port']);
+  sv('f-ftp-user',nc['s-ftp-user']);sv('f-ftp-pass',nc['s-ftp-pass']);
+}
+
+// ═══ LOCAL ════════════════════════════════════════════════════════════════════
+function renderLocal(){
+  syncTgl('tgl-localEnable',cfg.settings.localEnable!==false);
+  sv('f-localPath',cfg.settings.localPath);
+}
+
+// ═══ GENERAL ══════════════════════════════════════════════════════════════════
+function renderGeneral(){
+  sv('sel-tvMode',cfg.settings.tvMode||'auto');
+  sv('f-startupCh',cfg.settings.startupChannel);
+  renderTabOrder();
+}
+function renderTabOrder(){
+  const el=gi('tab-order-list');if(!el)return;
+  const order=cfg.settings.tabOrder||['itv','plex','icam','local','network'];
+  el.innerHTML=order.map((tab,i)=>`
+    <div class="tab-row">
+      <span style="color:var(--t3)">☰</span><span>${TAB_LABELS[tab]||tab}</span>
+      <button onclick="moveTab(${i},-1)" ${i===0?'disabled':''}>↑</button>
+      <button onclick="moveTab(${i},1)" ${i===order.length-1?'disabled':''}>↓</button>
+    </div>`).join('');
+}
+function moveTab(i,d){const o=cfg.settings.tabOrder;const j=i+d;if(j<0||j>=o.length)return;[o[i],o[j]]=[o[j],o[i]];renderTabOrder();}
+
+// ═══ PLAYBACK ═════════════════════════════════════════════════════════════════
+function syncTsMax(){sv('sel-tsMax',String(cfg.settings.timeshiftMaxMin||30));sv('sel-tsMax2',String(cfg.settings.timeshiftMaxMin||30));}
+function renderPlayback(){
+  sv('f-foTimeout',cfg.settings.foTimeout||15);
+  syncTsMax();
+  syncTgl('tgl-foAuto',cfg.settings.foAuto!==false);
+  syncTgl('tgl-ts',cfg.settings.timeshiftEnabled!==false);
+  syncTgl('tgl-altCheck',cfg.settings.autoAltCheck!==false);
+}
+
+// ═══ LOCALITIES ═══════════════════════════════════════════════════════════════
+function renderLocalities(){
+  const el=gi('loc-tags');if(!el)return;
+  const locs=cfg.settings.localities||[];
+  el.innerHTML=locs.length?locs.map((l,i)=>`<span class="tag">${esc(l)}<button onclick="rmLoc(${i})">✕</button></span>`).join(''):'<span style="font-size:11px;color:var(--t3)">None set</span>';
+}
+function addLoc(){const inp=gi('loc-in');const val=inp&&inp.value.trim();if(!val)return;if(!cfg.settings.localities)cfg.settings.localities=[];if(!cfg.settings.localities.includes(val))cfg.settings.localities.push(val);inp.value='';renderLocalities();}
+function rmLoc(i){cfg.settings.localities.splice(i,1);renderLocalities();}
+
+// ═══ Render all ═══════════════════════════════════════════════════════════════
+function renderAll(){
+  renderChannels();renderRepos();renderEpg();renderLeagues();
+  renderSportRepoSel();
+  syncTgl('tgl-sportFilter',cfg.settings.sportLeagueFilterEnabled!==false);
+  syncTgl('tgl-sportPast',cfg.settings.sportShowPastGames!==false);
+  renderPlex();renderDvr();renderIcam();renderNetwork();renderLocal();
+  renderStartupSel();
+  renderGeneral();renderPlayback();renderLocalities();updateBadges();
+}
+
+// ═══ FILE OPS ═════════════════════════════════════════════════════════════════
+function newCfg(){cfg=blank();filePath=null;gi('file-label').textContent='New config';renderAll();status('New blank configuration');toast('New config started')}
+async function openFile(){
+  const result=await window.API.openBackup();if(!result)return;
+  try{
+    const parsed=JSON.parse(result.raw);
+    if(parsed.type!=='streamvault-backup')throw new Error('Not a StreamVault backup');
+    const b=blank();
+    cfg={...b,...parsed,settings:{...b.settings,...(parsed.settings||{})}};
+    if(!cfg.items)cfg.items=[];
+    if(cfg.settings.plex)cfg.settings.plex={...b.settings.plex,...cfg.settings.plex};
+    if(cfg.settings.dvrCfg)cfg.settings.dvrCfg={...b.settings.dvrCfg,...cfg.settings.dvrCfg};
+    (cfg.settings.sportLeagues||[]).forEach(lg=>{lg.cachedGamesByPath={};lg.cacheDate='';});
+    filePath=result.path;gi('file-label').textContent=result.path.split(/[/\\]/).pop();
+    renderAll();status('Loaded: '+result.path);toast('Backup loaded ✓');
+  }catch(e){toast('Error: '+e.message);}
+}
+function buildJson(){
+  const out=JSON.parse(JSON.stringify(cfg));
+  out.exportedAt=Date.now();
+  (out.settings.sportLeagues||[]).forEach(lg=>{lg.cachedGamesByPath={};lg.cacheDate='';});
+  out.epgData={channels:{},programs:{}};out.settings.altCache={};
+  return JSON.stringify(out,null,2);
+}
+async function saveFile(){const saved=await window.API.saveBackup({raw:buildJson(),suggestedPath:filePath||undefined});if(saved){filePath=saved;gi('file-label').textContent=saved.split(/[/\\]/).pop();status('Saved: '+saved);toast('Saved ✓');}}
+async function saveInject(){const dest=await window.API.saveInject({raw:buildJson()});if(dest){status('Saved to USB: '+dest);toast('💾 Saved to inject/ ✓');}}
+async function scanDrives(){
+  const results=await window.API.scanDrives();
+  const el=gi('drive-results');
+  if(!results.length){el.textContent='No inject/*.json found on any drive.';return;}
+  el.innerHTML=results.map(r=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bd)"><span style="flex:1">${esc(r.drive)} → inject/${esc(r.file)}</span><button class="bc" onclick="loadDrive('${r.fullPath.replace(/\\/g,'/')}')">Load</button></div>`).join('');
+}
+async function loadDrive(p){
+  try{const raw=await window.API.readFile(p);const parsed=JSON.parse(raw);const b=blank();cfg={...b,...parsed,settings:{...b.settings,...(parsed.settings||{})}};(cfg.settings.sportLeagues||[]).forEach(lg=>{lg.cachedGamesByPath={};lg.cacheDate='';});gi('file-label').textContent=p.split('/').pop();renderAll();toast('Loaded from drive ✓');}catch(e){toast('Error: '+e.message);}
+}
+function updatePreview(){gi('json-pre').textContent=buildJson();}
+async function copyJson(){try{await navigator.clipboard.writeText(buildJson());toast('Copied ✓');}catch{toast('Copy failed — use Save As');}}
+
+// ── Network Inject ─────────────────────────────────────────────────────────
+function niSaveIp(v){try{localStorage.setItem('sv-ni-ip',v);}catch{}}
+function niGetIp(){return gi('ni-ip').value.trim();}
+function niGetPort(){return parseInt(gi('ni-port').value)||7654;}
+function niStatus(msg,ok){
+  const el=gi('ni-status');
+  el.textContent=msg;
+  el.style.color=ok===true?'var(--green,#4caf50)':ok===false?'var(--red,#f44336)':'var(--t3)';
+}
+async function niPing(){
+  const ip=niGetIp();
+  if(!ip){niStatus('Enter a Fire TV IP address first.',false);return;}
+  niStatus('Pinging '+ip+':'+niGetPort()+'…');
+  const r=await window.API.networkPing(ip,niGetPort());
+  if(r.ok){niStatus('✅ Connected — StreamVault is reachable',true);}
+  else{niStatus('❌ '+(r.error||'No response — is StreamVault open on the device?'),false);}
+}
+async function niPush(){
+  const ip=niGetIp();
+  if(!ip){niStatus('Enter a Fire TV IP address first.',false);return;}
+  const btn=gi('ni-push-btn');
+  btn.disabled=true;btn.textContent='Pushing…';
+  niStatus('Connecting to '+ip+'…');
+  try{
+    const r=await window.API.networkInject(ip,niGetPort(),buildJson());
+    if(r.ok){
+      niStatus('✅ Settings pushed successfully! StreamVault is applying them now.',true);
+      toast('📡 Network inject sent ✓');
+    }else{
+      niStatus('❌ '+(r.error||'Inject failed (status '+r.status+')'),false);
+    }
+  }catch(e){niStatus('❌ Error: '+e.message,false);}
+  finally{btn.disabled=false;btn.textContent='📡 Push Settings to Fire TV';}
+}
+
+// ═══ Init ═════════════════════════════════════════════════════════════════════
+// Restore saved IP on load
+try{const saved=localStorage.getItem('sv-ni-ip');if(saved)gi('ni-ip').value=saved;}catch{}
+renderAll();
+</script>
+</body>
+</html>

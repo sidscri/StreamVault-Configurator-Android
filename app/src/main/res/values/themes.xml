@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.SVConfig" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#0a0a0f</item>
+        <item name="android:statusBarColor">#12121a</item>
+        <item name="android:navigationBarColor">#0a0a0f</item>
+    </style>
+</resources>
