@@ -29,11 +29,21 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.Socket;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MainActivity extends Activity {
 
@@ -124,8 +134,9 @@ public class MainActivity extends Activity {
             "    pickM3u:      wrap('pickM3u')," +
             "    readFile:     wrap('readFile')," +
             "    scanDrives:   wrap('scanDrives')," +
-            "    networkPing:  wrap('networkPing')," +
-            "    networkInject:wrap('networkInject')," +
+            \"    networkPing:  wrap('networkPing'),\" +
+            \"    networkInject:wrap('networkInject'),\" +
+            \"    networkScan:  wrap('networkScan'),\" +
             "    saveBackup:function(args){" +
             "      return new Promise(function(resolve){" +
             "        var id=String(++__id);" +
@@ -329,6 +340,89 @@ public class MainActivity extends Activity {
                         result.put("error", e.getMessage() != null ? e.getMessage() : "Connection failed");
                     } catch (Exception ignored) {}
                     resolveJs(cbId, result.toString());
+                }
+            }).start();
+        }
+
+        // ── Network: Scan LAN for StreamVault servers ──────────────────────
+        // Scans the local /24 subnet in parallel (50 threads, 300ms socket timeout).
+        // Each responding host is pinged at /ping to confirm StreamVault identity.
+        // Returns JSON array of {ip, name, version, port} objects.
+        @JavascriptInterface
+        public void networkScan(int port, String cbId) {
+            new Thread(() -> {
+                try {
+                    // Determine local IP via WifiManager
+                    android.net.wifi.WifiManager wm = (android.net.wifi.WifiManager)
+                        getApplicationContext().getSystemService(WIFI_SERVICE);
+                    int ipInt = wm != null ? wm.getConnectionInfo().getIpAddress() : 0;
+                    if (ipInt == 0) {
+                        resolveJs(cbId, "[]");
+                        return;
+                    }
+                    // Convert to dotted notation (little-endian on Android)
+                    String localIp = String.format(Locale.US, "%d.%d.%d.%d",
+                        (ipInt & 0xff), (ipInt >> 8 & 0xff),
+                        (ipInt >> 16 & 0xff), (ipInt >> 24 & 0xff));
+                    String[] parts = localIp.split("\\.");
+                    if (parts.length < 3) { resolveJs(cbId, "[]"); return; }
+                    String subnet = parts[0] + "." + parts[1] + "." + parts[2] + ".";
+
+                    List<JSONObject> found = Collections.synchronizedList(new ArrayList<>());
+                    ExecutorService pool = Executors.newFixedThreadPool(50);
+                    CountDownLatch latch = new CountDownLatch(254);
+
+                    for (int i = 1; i <= 254; i++) {
+                        final String target = subnet + i;
+                        pool.submit(() -> {
+                            try {
+                                // Fast TCP probe first — much faster than full HTTP
+                                try (Socket sock = new Socket()) {
+                                    sock.connect(new java.net.InetSocketAddress(target, port), 300);
+                                }
+                                // Port responded — confirm it's StreamVault via /ping
+                                String pingBody = "";
+                                try {
+                                    URL url = new URL("http://" + target + ":" + port + "/ping");
+                                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                                    conn.setConnectTimeout(1500);
+                                    conn.setReadTimeout(1500);
+                                    conn.setRequestMethod("GET");
+                                    if (conn.getResponseCode() == 200) {
+                                        pingBody = readStream(conn.getInputStream());
+                                    }
+                                    conn.disconnect();
+                                } catch (Exception ignored) {}
+
+                                JSONObject entry = new JSONObject();
+                                entry.put("ip", target);
+                                entry.put("port", port);
+                                // Parse name/version from /ping response if available
+                                try {
+                                    JSONObject pong = new JSONObject(pingBody);
+                                    entry.put("app",     pong.optString("app", "StreamVault"));
+                                    entry.put("version", pong.optString("version", ""));
+                                    entry.put("name",    pong.optString("name", target));
+                                } catch (Exception e2) {
+                                    entry.put("app",  "StreamVault");
+                                    entry.put("name", target);
+                                }
+                                found.add(entry);
+                            } catch (Exception ignored) {
+                                // Port closed or host unreachable — skip silently
+                            } finally {
+                                latch.countDown();
+                            }
+                        });
+                    }
+
+                    pool.shutdown();
+                    latch.await(12, TimeUnit.SECONDS);
+                    pool.shutdownNow();
+
+                    resolveJs(cbId, new JSONArray(found).toString());
+                } catch (Exception e) {
+                    resolveJs(cbId, "[]");
                 }
             }).start();
         }

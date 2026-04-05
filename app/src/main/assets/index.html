@@ -167,6 +167,21 @@ code{background:var(--c2);padding:1px 5px;border-radius:3px;font-size:10px}
 <div class="panel" id="panel-channels">
   <div class="ph">ITV Channels</div>
   <div class="pd">Pre-configure your ITV library. Channels appear in the Home/ITV tab and are available as the startup channel.</div>
+
+  <div class="ss">
+    <h3>📡 Pick from Repo</h3>
+    <p style="font-size:12px;color:var(--t2);margin-bottom:10px">Fetch a repo's M3U and select channels to add directly.</p>
+    <div class="rw" style="margin-bottom:8px">
+      <div class="field">
+        <label class="fl">Repo</label>
+        <select id="ch-repo-sel" style="width:100%"><option value="">— select a repo —</option></select>
+      </div>
+      <div style="display:flex;align-items:flex-end;padding-bottom:2px">
+        <button class="bs" onclick="openRepoPicker()">Browse…</button>
+      </div>
+    </div>
+  </div>
+
   <div class="ss">
     <h3>Import from M3U</h3>
     <div class="field">
@@ -526,12 +541,11 @@ code{background:var(--c2);padding:1px 5px;border-radius:3px;font-size:10px}
 
   <div class="ss" style="border-top:1px solid var(--bd);margin-top:8px;padding-top:16px">
     <h3 style="display:flex;align-items:center;gap:8px">📡 Network Inject <span style="font-size:10px;font-weight:400;color:var(--t3)">(same Wi-Fi / LAN)</span></h3>
-    <p style="font-size:12px;color:var(--t2);line-height:1.7;margin-bottom:12px">
-      Push settings wirelessly — no USB stick needed.<br>
-      StreamVault must be <strong>open and running</strong> on the Fire TV device.<br>
-      Enter the Fire TV's local IP address below.
+    <p style="font-size:12px;color:var(--t2);line-height:1.7;margin-bottom:10px">
+      Push settings wirelessly — StreamVault must be <strong>open</strong> on the Fire TV.
     </p>
-    <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center">
+
+    <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center">
       <div style="flex:1">
         <label style="font-size:10px;color:var(--t3);display:block;margin-bottom:4px">Fire TV IP Address</label>
         <input id="ni-ip" placeholder="192.168.1.xxx" autocomplete="off"
@@ -544,15 +558,60 @@ code{background:var(--c2);padding:1px 5px;border-radius:3px;font-size:10px}
           style="width:100%;padding:7px 6px;background:var(--c1);border:1px solid var(--bd);border-radius:var(--rs);color:var(--t1);font-size:13px;box-sizing:border-box;text-align:center">
       </div>
     </div>
-    <div style="display:flex;gap:8px;margin-bottom:10px">
-      <button class="bc" style="flex:1;padding:8px" onclick="niPing()">🔍 Test Connection</button>
-      <button class="bs" id="ni-push-btn" style="flex:2;padding:8px" onclick="niPush()">📡 Push Settings to Fire TV</button>
+
+    <!-- Recent IPs -->
+    <div id="ni-recent" style="display:none;margin-bottom:10px">
+      <div style="font-size:10px;color:var(--t3);margin-bottom:4px">Recent:</div>
+      <div id="ni-recent-chips" style="display:flex;flex-wrap:wrap;gap:5px"></div>
     </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <button class="bc" style="flex:1;padding:8px" onclick="niPing()">🔍 Test</button>
+      <button class="bc" style="flex:1;padding:8px" id="ni-scan-btn" onclick="niScan()">📶 Scan Network</button>
+      <button class="bs" id="ni-push-btn" style="flex:2;padding:8px" onclick="niPush()">📡 Push to Fire TV</button>
+    </div>
+
+    <!-- Scan results -->
+    <div id="ni-scan-results" style="display:none;margin-bottom:8px">
+      <div style="font-size:10px;color:var(--t3);margin-bottom:6px">Discovered StreamVault devices — tap to select:</div>
+      <div id="ni-scan-list"></div>
+    </div>
+
     <div id="ni-status" style="font-size:12px;color:var(--t3);min-height:18px"></div>
   </div>
 </div>
 
 </div><!-- /content -->
+
+<!-- ═══ REPO CHANNEL PICKER MODAL ═══ -->
+<div id="mo-repo-picker" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:none;align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--c1);border:1px solid var(--bd);border-radius:12px;width:100%;max-width:700px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
+    <div style="padding:14px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px">
+      <div style="flex:1;font-size:14px;font-weight:700;color:var(--t1)">📡 Pick Channels from Repo</div>
+      <button onclick="closeRepoPicker()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div style="padding:10px 16px;border-bottom:1px solid var(--bd);display:flex;gap:8px;align-items:center">
+      <input id="rp-search" placeholder="Search channels…" autocomplete="off"
+        style="flex:1;padding:7px 10px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--rs);color:var(--t1);font-size:12px"
+        oninput="rpFilter()">
+      <select id="rp-group-filter" onchange="rpFilter()"
+        style="padding:7px 8px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--rs);color:var(--t1);font-size:12px">
+        <option value="">All Groups</option>
+      </select>
+      <label style="font-size:11px;color:var(--t2);white-space:nowrap;cursor:pointer">
+        <input type="checkbox" id="rp-sel-all" onchange="rpToggleAll(this.checked)"> All
+      </label>
+    </div>
+    <div id="rp-list" style="flex:1;overflow-y:auto;padding:8px 16px">
+      <div style="color:var(--t3);font-size:12px;text-align:center;padding:30px">Loading…</div>
+    </div>
+    <div style="padding:10px 16px;border-top:1px solid var(--bd);display:flex;align-items:center;gap:10px">
+      <div id="rp-count" style="flex:1;font-size:11px;color:var(--t3)">0 selected</div>
+      <button class="bc" onclick="closeRepoPicker()">Cancel</button>
+      <button class="bs" id="rp-add-btn" onclick="rpAddSelected()" disabled>Add Selected (0)</button>
+    </div>
+  </div>
+</div>
 </div><!-- /layout -->
 <div id="statusbar">Ready — New for blank config, Open to load existing backup</div>
 <div id="toast"></div>
@@ -756,7 +815,7 @@ function renderRepos(){
         <button class="del-btn" onclick="rmRepo(${i})">✕</button>
       </div>
       <div class="field"><label class="fl">Name</label>
-        <input value="${esc(r.name||'')}" oninput="cfg.repos[${i}].name=this.value;renderSportRepoSel()">
+        <input value="${esc(r.name||'')}" oninput="cfg.repos[${i}].name=this.value;renderSportRepoSel();renderChannelRepoSel()">
       </div>
       <div class="field"><label class="fl">M3U URL</label>
         <input type="url" value="${esc(r.sourceUrl||'')}" placeholder="https://provider.com/playlist.m3u"
@@ -764,7 +823,7 @@ function renderRepos(){
         <div class="hint">StreamVault fetches this on launch to get all channels and groups</div>
       </div>
     </div>`).join('');
-  updateBadges();renderSportRepoSel();renderEpgDefault();
+  updateBadges();renderSportRepoSel();renderEpgDefault();renderChannelRepoSel();
 }
 function addRepo(){if(!cfg.repos)cfg.repos=[];cfg.repos.push({id:uid(),name:'My Repo',sourceUrl:'',addedAt:Date.now(),streams:[]});renderRepos()}
 function rmRepo(i){cfg.repos.splice(i,1);renderRepos()}
@@ -1091,7 +1150,7 @@ function rmLoc(i){cfg.settings.localities.splice(i,1);renderLocalities();}
 // ═══ Render all ═══════════════════════════════════════════════════════════════
 function renderAll(){
   renderChannels();renderRepos();renderEpg();renderLeagues();
-  renderSportRepoSel();
+  renderSportRepoSel();renderChannelRepoSel();
   syncTgl('tgl-sportFilter',cfg.settings.sportLeagueFilterEnabled!==false);
   syncTgl('tgl-sportPast',cfg.settings.sportShowPastGames!==false);
   renderPlex();renderDvr();renderIcam();renderNetwork();renderLocal();
@@ -1138,43 +1197,259 @@ function updatePreview(){gi('json-pre').textContent=buildJson();}
 async function copyJson(){try{await navigator.clipboard.writeText(buildJson());toast('Copied ✓');}catch{toast('Copy failed — use Save As');}}
 
 // ── Network Inject ─────────────────────────────────────────────────────────
-function niSaveIp(v){try{localStorage.setItem('sv-ni-ip',v);}catch{}}
-function niGetIp(){return gi('ni-ip').value.trim();}
-function niGetPort(){return parseInt(gi('ni-port').value)||7654;}
-function niStatus(msg,ok){
-  const el=gi('ni-status');
-  el.textContent=msg;
-  el.style.color=ok===true?'var(--green,#4caf50)':ok===false?'var(--red,#f44336)':'var(--t3)';
+function niSaveIp(v) {
+  v = (v || '').trim();
+  if (!v) return;
+  try {
+    let list = JSON.parse(localStorage.getItem('sv-ni-ips') || '[]');
+    list = list.filter(x => x !== v);
+    list.unshift(v);
+    if (list.length > 5) list = list.slice(0, 5);
+    localStorage.setItem('sv-ni-ips', JSON.stringify(list));
+    localStorage.setItem('sv-ni-ip', v); // backward compat
+  } catch(e) {}
+  renderIpChips();
 }
-async function niPing(){
-  const ip=niGetIp();
-  if(!ip){niStatus('Enter a Fire TV IP address first.',false);return;}
-  niStatus('Pinging '+ip+':'+niGetPort()+'…');
-  const r=await window.API.networkPing(ip,niGetPort());
-  if(r.ok){niStatus('✅ Connected — StreamVault is reachable',true);}
-  else{niStatus('❌ '+(r.error||'No response — is StreamVault open on the device?'),false);}
+function renderIpChips() {
+  try {
+    const list = JSON.parse(localStorage.getItem('sv-ni-ips') || '[]');
+    const wrap = gi('ni-recent');
+    const chips = gi('ni-recent-chips');
+    if (!wrap || !chips) return;
+    if (!list.length) { wrap.style.display = 'none'; return; }
+    wrap.style.display = '';
+    chips.innerHTML = list.map(ip =>
+      `<span onclick="niPickIp('${esc(ip)}')" style="display:inline-block;padding:3px 9px;background:var(--c2);border:1px solid var(--bd);border-radius:20px;font-size:11px;color:var(--t2);cursor:pointer" onmouseenter="this.style.borderColor='var(--ac)'" onmouseleave="this.style.borderColor='var(--bd)'">${esc(ip)}</span>`
+    ).join('');
+  } catch(e) {}
 }
-async function niPush(){
-  const ip=niGetIp();
-  if(!ip){niStatus('Enter a Fire TV IP address first.',false);return;}
-  const btn=gi('ni-push-btn');
-  btn.disabled=true;btn.textContent='Pushing…';
-  niStatus('Connecting to '+ip+'…');
-  try{
-    const r=await window.API.networkInject(ip,niGetPort(),buildJson());
-    if(r.ok){
-      niStatus('✅ Settings pushed successfully! StreamVault is applying them now.',true);
+function niPickIp(ip) {
+  const el = gi('ni-ip');
+  if (el) { el.value = ip; niSaveIp(ip); }
+  niStatus('');
+}
+function niGetIp() { return (gi('ni-ip').value || '').trim(); }
+function niGetPort() { return parseInt(gi('ni-port').value) || 7654; }
+function niStatus(msg, ok) {
+  const el = gi('ni-status');
+  el.textContent = msg;
+  el.style.color = ok === true ? '#4caf50' : ok === false ? '#f44336' : 'var(--t3)';
+}
+
+async function niPing() {
+  const ip = niGetIp();
+  if (!ip) { niStatus('Enter a Fire TV IP address first.', false); return; }
+  niStatus('Pinging ' + ip + ':' + niGetPort() + '…');
+  const r = await window.API.networkPing(ip, niGetPort());
+  if (r.ok) { niSaveIp(ip); niStatus('✅ Connected — StreamVault is reachable', true); }
+  else { niStatus('❌ ' + (r.error || 'No response — is StreamVault open on the device?'), false); }
+}
+
+async function niPush() {
+  const ip = niGetIp();
+  if (!ip) { niStatus('Enter a Fire TV IP address first.', false); return; }
+  const btn = gi('ni-push-btn');
+  btn.disabled = true; btn.textContent = 'Pushing…';
+  niStatus('Connecting to ' + ip + '…');
+  try {
+    const r = await window.API.networkInject(ip, niGetPort(), buildJson());
+    if (r.ok) {
+      niSaveIp(ip);
+      niStatus('✅ Settings pushed! StreamVault is applying them now.', true);
       toast('📡 Network inject sent ✓');
-    }else{
-      niStatus('❌ '+(r.error||'Inject failed (status '+r.status+')'),false);
+    } else {
+      niStatus('❌ ' + (r.error || 'Inject failed (status ' + r.status + ')'), false);
     }
-  }catch(e){niStatus('❌ Error: '+e.message,false);}
-  finally{btn.disabled=false;btn.textContent='📡 Push Settings to Fire TV';}
+  } catch(e) { niStatus('❌ Error: ' + e.message, false); }
+  finally { btn.disabled = false; btn.textContent = '📡 Push to Fire TV'; }
+}
+
+async function niScan() {
+  const btn = gi('ni-scan-btn');
+  const scanRes = gi('ni-scan-results');
+  const scanList = gi('ni-scan-list');
+  btn.disabled = true; btn.textContent = '📶 Scanning…';
+  niStatus('Scanning local network for StreamVault devices… (up to 12 s)', null);
+  scanRes.style.display = 'none';
+  try {
+    const results = await window.API.networkScan(niGetPort());
+    btn.disabled = false; btn.textContent = '📶 Scan Network';
+    if (!results || !results.length) {
+      niStatus('No StreamVault devices found. Make sure StreamVault is open on the Fire TV.', false);
+      return;
+    }
+    niStatus('Found ' + results.length + ' device' + (results.length > 1 ? 's' : '') + ' — tap one to select it.', true);
+    scanList.innerHTML = results.map(d => {
+      const label = (d.name && d.name !== d.ip) ? d.name : (d.app || 'StreamVault');
+      const ver = d.version ? ' v' + d.version : '';
+      return `<div onclick="niPickIp('${esc(d.ip)}')" style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--rs);margin-bottom:6px;cursor:pointer" onmouseenter="this.style.borderColor='var(--ac)'" onmouseleave="this.style.borderColor='var(--bd)'">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:var(--t1)">${esc(label)}${esc(ver)}</div>
+          <div style="font-size:11px;color:var(--t3)">${esc(d.ip)}:${d.port}</div>
+        </div>
+        <div style="font-size:11px;color:var(--ac)">Select →</div>
+      </div>`;
+    }).join('');
+    scanRes.style.display = '';
+  } catch(e) {
+    btn.disabled = false; btn.textContent = '📶 Scan Network';
+    niStatus('❌ Scan failed: ' + e.message, false);
+  }
+}
+
+// ── Repo Channel Picker ────────────────────────────────────────────────────
+let _rpStreams = [];   // all streams from fetched M3U
+let _rpFiltered = []; // after search/group filter
+let _rpSelected = new Set();
+
+function renderChannelRepoSel() {
+  const sel = gi('ch-repo-sel'); if (!sel) return;
+  sel.innerHTML = '<option value="">— select a repo —</option>' +
+    (cfg.repos || []).filter(r => r.sourceUrl).map(r =>
+      `<option value="${esc(r.sourceUrl)}">${esc(r.name || r.sourceUrl)}</option>`
+    ).join('');
+}
+
+async function openRepoPicker() {
+  const sel = gi('ch-repo-sel');
+  const url = sel ? sel.value.trim() : '';
+  if (!url) { toast('Select a repo with an M3U URL first'); return; }
+
+  const modal = gi('mo-repo-picker');
+  modal.style.display = 'flex';
+  _rpStreams = []; _rpFiltered = []; _rpSelected = new Set();
+  gi('rp-list').innerHTML = '<div style="color:var(--t3);font-size:12px;text-align:center;padding:30px">Fetching M3U…</div>';
+  gi('rp-search').value = '';
+  gi('rp-group-filter').innerHTML = '<option value="">All Groups</option>';
+  gi('rp-sel-all').checked = false;
+  rpUpdateCount();
+
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const text = await resp.text();
+    _rpStreams = parseM3USimple(text);
+    if (!_rpStreams.length) throw new Error('No streams found in M3U');
+
+    // Populate group filter
+    const groups = [...new Set(_rpStreams.map(s => s.category).filter(Boolean))].sort();
+    gi('rp-group-filter').innerHTML = '<option value="">All Groups (' + _rpStreams.length + ')</option>' +
+      groups.map(g => `<option value="${esc(g)}">${esc(g)}</option>`).join('');
+
+    _rpFiltered = _rpStreams;
+    rpRenderList();
+  } catch(e) {
+    gi('rp-list').innerHTML = `<div style="color:#f44336;font-size:12px;text-align:center;padding:30px">❌ ${esc(e.message)}</div>`;
+  }
+}
+
+function closeRepoPicker() {
+  const modal = gi('mo-repo-picker');
+  modal.style.display = 'none';
+  _rpStreams = []; _rpFiltered = []; _rpSelected = new Set();
+}
+
+function rpFilter() {
+  const q = (gi('rp-search').value || '').toLowerCase().trim();
+  const grp = gi('rp-group-filter').value;
+  _rpFiltered = _rpStreams.filter(s => {
+    if (grp && s.category !== grp) return false;
+    if (q && !s.title.toLowerCase().includes(q) && !(s.category||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+  gi('rp-sel-all').checked = false;
+  rpRenderList();
+}
+
+function rpRenderList() {
+  const MAX = 300;
+  const shown = _rpFiltered.slice(0, MAX);
+  gi('rp-list').innerHTML = shown.length
+    ? shown.map((s, vi) => {
+        const checked = _rpSelected.has(s._idx) ? 'checked' : '';
+        return `<label style="display:flex;align-items:center;gap:9px;padding:6px 4px;border-bottom:1px solid var(--bd);cursor:pointer">
+          <input type="checkbox" ${checked} onchange="rpToggle(${s._idx},this.checked)" style="flex-shrink:0">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.title)}</div>
+            <div style="font-size:10px;color:var(--t3)">${esc(s.category||'—')}</div>
+          </div>
+        </label>`;
+      }).join('') +
+      (_rpFiltered.length > MAX ? `<div style="font-size:11px;color:var(--t3);text-align:center;padding:10px">Showing first ${MAX} of ${_rpFiltered.length} — use search/group to narrow</div>` : '')
+    : '<div style="color:var(--t3);font-size:12px;text-align:center;padding:20px">No channels match</div>';
+  rpUpdateCount();
+}
+
+function rpToggle(idx, checked) {
+  if (checked) _rpSelected.add(idx); else _rpSelected.delete(idx);
+  rpUpdateCount();
+}
+
+function rpToggleAll(checked) {
+  if (checked) _rpFiltered.forEach(s => _rpSelected.add(s._idx));
+  else _rpFiltered.forEach(s => _rpSelected.delete(s._idx));
+  rpRenderList();
+}
+
+function rpUpdateCount() {
+  const n = _rpSelected.size;
+  gi('rp-count').textContent = n + ' selected';
+  const btn = gi('rp-add-btn');
+  btn.disabled = n === 0;
+  btn.textContent = 'Add Selected (' + n + ')';
+}
+
+function rpAddSelected() {
+  if (!_rpSelected.size) return;
+  if (!cfg.items) cfg.items = [];
+  let added = 0;
+  _rpStreams.forEach(s => {
+    if (!_rpSelected.has(s._idx)) return;
+    cfg.items.push({
+      id: uid(), title: s.title, name: s.title,
+      url: s.url, category: s.category || '',
+      icon: s.icon || '', epgTitle: s.epgTitle || '',
+      epgLink: '', region: '', tags: [],
+      baseName: s.title.toLowerCase().trim()
+    });
+    added++;
+  });
+  closeRepoPicker();
+  renderChannels();
+  toast(added + ' channel' + (added !== 1 ? 's' : '') + ' added ✓');
+}
+
+function parseM3USimple(text) {
+  const lines = text.split(/\r?\n/);
+  const streams = [];
+  let cur = null;
+  let idx = 0;
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line || line === '#EXTM3U') continue;
+    if (line.startsWith('#EXTINF:')) {
+      cur = { title: '', url: '', category: '', icon: '', epgTitle: '', _idx: idx++ };
+      const tvgName  = line.match(/tvg-name="([^"]+)"/i);
+      const tvgId    = line.match(/tvg-id="([^"]+)"/i);
+      const logo     = line.match(/tvg-logo="([^"]+)"/i);
+      const group    = line.match(/group-title="([^"]+)"/i);
+      const ci = line.lastIndexOf(',');
+      cur.title    = (tvgName ? tvgName[1] : ci >= 0 ? line.slice(ci + 1).trim() : '') || 'Channel';
+      cur.epgTitle = tvgId  ? tvgId[1]  : '';
+      cur.icon     = logo   ? logo[1]   : '';
+      cur.category = group  ? group[1]  : '';
+    } else if (line.match(/^https?:\/\//i) && cur) {
+      cur.url = line;
+      streams.push(cur);
+      cur = null;
+    }
+  }
+  return streams;
 }
 
 // ═══ Init ═════════════════════════════════════════════════════════════════════
-// Restore saved IP on load
-try{const saved=localStorage.getItem('sv-ni-ip');if(saved)gi('ni-ip').value=saved;}catch{}
+try { const saved = localStorage.getItem('sv-ni-ip'); if (saved) gi('ni-ip').value = saved; } catch {}
+renderIpChips();
 renderAll();
 </script>
 </body>
