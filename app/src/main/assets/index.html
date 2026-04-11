@@ -233,6 +233,14 @@ code{background:var(--c2);padding:1px 5px;border-radius:3px;font-size:10px}
       <div><div class="sl">Show past/completed games</div><div class="sd">Include finished games in the schedule</div></div>
       <div class="tgl on" id="tgl-sportPast" onclick="tglSet(this,'sportShowPastGames')"></div>
     </div>
+    <div class="sr">
+      <div><div class="sl">Default to My Teams Only</div><div class="sd">Open Sports tab in My Teams Only → Live Today view</div></div>
+      <div class="tgl on" id="tgl-sportDefault" onclick="tglSet(this,'sportDefaultMyTeams')"></div>
+    </div>
+    <div class="sr">
+      <div><div class="sl">Show all ESPN leagues in All Games</div><div class="sd">Fetch extra leagues (non-configured) for the All Games tab</div></div>
+      <div class="tgl" id="tgl-allGamesExtra" onclick="tglSet(this,'allGamesExtraEnabled')"></div>
+    </div>
   </div>
   <!-- ② Global My Teams -->
   <div class="ss">
@@ -646,28 +654,33 @@ code{background:var(--c2);padding:1px 5px;border-radius:3px;font-size:10px}
 
 // ═══ ESPN data ════════════════════════════════════════════════════════════════
 const ESPN_LEAGUE_MAP = [
-  {keys:['nfl','national football league'],               path:'football/nfl',                       label:'NFL'},
-  {keys:['mlb','major league baseball','baseball'],       path:'baseball/mlb',                       label:'MLB'},
-  {keys:['nba','national basketball'],                    path:'basketball/nba',                     label:'NBA'},
-  {keys:['nhl','national hockey','hockey'],               path:'hockey/nhl',                         label:'NHL'},
-  {keys:['mls','major league soccer'],                    path:'soccer/usa.1',                       label:'MLS'},
-  {keys:['wnba'],                                         path:'basketball/wnba',                    label:'WNBA'},
-  {keys:['premier league','epl','bpl'],                   path:'soccer/eng.1',                       label:'EPL'},
-  {keys:['la liga','laliga'],                             path:'soccer/esp.1',                       label:'La Liga'},
-  {keys:['bundesliga'],                                   path:'soccer/ger.1',                       label:'Bundesliga'},
-  {keys:['serie a'],                                      path:'soccer/ita.1',                       label:'Serie A'},
-  {keys:['ligue 1','ligue1'],                             path:'soccer/fra.1',                       label:'Ligue 1'},
-  {keys:['champions league','ucl'],                       path:'soccer/uefa.champions',              label:'UCL'},
-  {keys:['ncaa football','cfb','college football'],       path:'football/college-football',          label:'CFB'},
-  {keys:['ncaa basketball','ncaab','college basketball'], path:'basketball/mens-college-basketball', label:'NCAAB'},
-  {keys:['liga mx'],                                      path:'soccer/mex.1',                       label:'Liga MX'},
-  {keys:['ufc','mma','ultimate fighting'],                path:'mma/ufc',                            label:'UFC/MMA'},
-  {keys:['boxing','ppv boxing'],                          path:'boxing/boxing',                      label:'Boxing'},
-  {keys:['formula 1','formula one','f1'],                 path:'racing/f1',                          label:'Formula 1'},
-  {keys:['racing','nascar'],                              path:'racing/nascar',                      label:'NASCAR'},
-  {keys:['tennis','atp','wta'],                           path:'tennis/atp',                         label:'Tennis'},
-  {keys:['golf','pga'],                                   path:'golf/leaderboard',                   label:'Golf'},
-  {keys:['cricket'],                                      path:'cricket/icc-cricket',                label:'Cricket'},
+  {keys:['nfl','national football league'],               path:'football/nfl',                       label:'NFL',        icon:'🏈'},
+  {keys:['mlb','major league baseball','baseball'],       path:'baseball/mlb',                       label:'MLB',        icon:'⚾'},
+  {keys:['nba','national basketball'],                    path:'basketball/nba',                     label:'NBA',        icon:'🏀'},
+  {keys:['nhl','national hockey','hockey'],               path:'hockey/nhl',                         label:'NHL',        icon:'🏒'},
+  {keys:['mls','major league soccer'],                    path:'soccer/usa.1',                       label:'MLS',        icon:'⚽'},
+  {keys:['wnba'],                                         path:'basketball/wnba',                    label:'WNBA',       icon:'🏀'},
+  {keys:['premier league','epl','bpl'],                   path:'soccer/eng.1',                       label:'EPL',        icon:'🇬🇧'},
+  {keys:['la liga','laliga'],                             path:'soccer/esp.1',                       label:'La Liga',    icon:'🇪🇸'},
+  {keys:['bundesliga'],                                   path:'soccer/ger.1',                       label:'Bundesliga', icon:'🇩🇪'},
+  {keys:['serie a'],                                      path:'soccer/ita.1',                       label:'Serie A',    icon:'🇮🇹'},
+  {keys:['ligue 1','ligue1'],                             path:'soccer/fra.1',                       label:'Ligue 1',    icon:'🇫🇷'},
+  {keys:['champions league','ucl'],                       path:'soccer/uefa.champions',              label:'UCL',        icon:'🏆'},
+  {keys:['ncaaf','ncaa football','cfb','college football'],path:'football/college-football',          label:'CFB',        icon:'🎓🏈'},
+  {keys:['ncaa basketball','ncaab','college basketball'], path:'basketball/mens-college-basketball', label:'NCAAB',      icon:'🎓🏀'},
+  {keys:['liga mx'],                                      path:'soccer/mex.1',                       label:'Liga MX',    icon:'🇲🇽'},
+  {keys:['ufc','mma','ultimate fighting'],                path:'mma/ufc',                            label:'UFC/MMA',    icon:'🥊'},
+  {keys:['boxing','ppv boxing'],                          path:'boxing/boxing',                      label:'Boxing',     icon:'🥊'},
+  {keys:['formula 1','formula one','f1'],                 path:'racing/f1',                          label:'Formula 1',  icon:'🏎️'},
+  {keys:['racing','nascar'],                              path:'racing/nascar',                      label:'NASCAR',     icon:'🏁'},
+  {keys:['tennis','atp','wta'],                           path:'tennis/atp',                         label:'Tennis',     icon:'🎾'},
+  {keys:['golf','pga'],                                   path:'golf/leaderboard',                   label:'Golf',       icon:'⛳'},
+  {keys:['cricket'],                                      path:'cricket/icc-cricket',                label:'Cricket',    icon:'🏏'},
+  {keys:['cfl','canadian football'],                      path:'football/cfl',                       label:'CFL',        icon:'🇨🇦🏈'},
+  {keys:['rugby','mlr','major league rugby'],             path:'rugby/289262',                       label:'MLR',        icon:'🏉'},
+  {keys:['nrl','rugby league','national rugby'],          path:'rugby/3',                            label:'NRL',        icon:'🏉🇦🇺'},
+  {keys:['world cup','fifa','fifa world cup'],            path:'soccer/fifa.world',                  label:'World Cup',  icon:'🏆⚽'},
+  {keys:['ncaaw','women\'s college basketball'],          path:'basketball/womens-college-basketball',label:'NCAAW',     icon:'🎓🏀'},
 ];
 const SPORT_KW = ESPN_LEAGUE_MAP.flatMap(e=>e.keys).concat([
   'sport','sports','ufc','mma','boxing','rugby','cricket','tennis','golf','nascar',
@@ -692,7 +705,7 @@ let cfg=blank(), filePath=null;
 let _mtSugg=[],_mtTimer=null; // ESPN team autocomplete state
 
 function blank(){return{
-  type:'streamvault-backup',version:'5.3.9',build:111,exportedAt:Date.now(),
+  type:'streamvault-backup',version:'5.6.10',build:139,exportedAt:Date.now(),
   items:[],repos:[],epgSrc:[],epgData:{channels:{},programs:{}},
   settings:{
     localities:[],startupChannel:'',defaultEpgSource:'',foTimeout:15,
@@ -703,7 +716,8 @@ function blank(){return{
     timeshiftEnabled:true,timeshiftMaxMin:30,
     dvrCfg:{remoteEnabled:false,proto:'ftp',host:'',port:'21',user:'',pass:'',path:'/recordings'},
     sportLeagueFilterEnabled:true,sportLeagues:[],sportShowPastGames:true,
-    myTeams:[], // [{name, espnPath, leagueLabel}] — global, applied to all leagues
+    myTeams:[],
+    excludedLeagues:[], allGamesExtraEnabled:false, sportDefaultMyTeams:true,
     localEnable:true,localPath:'',
     icamCfg:{proto:'rtsp',host:'',port:'554',user:'',pass:'',name:''},
     networkCfg:{lanScanAuto:false},
@@ -1245,6 +1259,10 @@ function renderAll(){
   renderSportRepoSel();renderChannelRepoSel();
   syncTgl('tgl-sportFilter',cfg.settings.sportLeagueFilterEnabled!==false);
   syncTgl('tgl-sportPast',cfg.settings.sportShowPastGames!==false);
+  syncTgl('tgl-sportDefault',cfg.settings.sportDefaultMyTeams!==false);
+  syncTgl('tgl-allGamesExtra',!!cfg.settings.allGamesExtraEnabled);
+  if(!cfg.settings.excludedLeagues)cfg.settings.excludedLeagues=[];
+  if(cfg.settings.sportDefaultMyTeams===undefined)cfg.settings.sportDefaultMyTeams=true;
   renderPlex();renderDvr();renderIcam();renderNetwork();renderLocal();
   renderStartupSel();
   renderGeneral();renderPlayback();renderLocalities();updateBadges();
