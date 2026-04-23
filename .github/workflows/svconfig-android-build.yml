@@ -34,7 +34,6 @@ jobs:
       - name: Build Release APK
         run: ./gradlew assembleRelease --no-daemon -Dorg.gradle.wrapper.validateDistributionUrl=false
 
-      # Keep the artifact upload for manual downloads / history
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
@@ -42,7 +41,6 @@ jobs:
           path: app/build/outputs/apk/release/SVConfig-*.apk
           retention-days: 30
 
-      # Push the APK into the F-Droid repo
       - name: Push APK to fdroid repo
         env:
           FDROID_TOKEN: ${{ secrets.FDROID_REPO_TOKEN }}
@@ -50,28 +48,24 @@ jobs:
           APK_PATH=$(ls app/build/outputs/apk/release/SVConfig-*-release.apk)
           APK_FILE=$(basename "$APK_PATH")
 
-          # Clone the fdroid repo
           git clone \
             "https://x-access-token:${FDROID_TOKEN}@github.com/northstar-works/fdroid.git" \
-            fdroid-repo
+            fdroid
 
-          # Copy the new APK in, removing any older SVConfig APKs first
-          rm -f fdroid-repo/repo/SVConfig-*.apk
-          cp "$APK_PATH" fdroid-repo/repo/
+          # Replace any older SVConfig APK
+          mkdir -p fdroid/repo
+          rm -f fdroid/repo/SVConfig-*.apk
+          cp "$APK_PATH" fdroid/repo/
 
-          cd fdroid-repo
-
+          cd fdroid
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
           git add repo/"$APK_FILE"
-          git status
 
-          # Only commit if there's actually a change
           if git diff --cached --quiet; then
-            echo "No APK change detected, skipping commit."
+            echo "No change, skipping."
           else
             VERSION=$(echo "$APK_FILE" | sed 's/SVConfig-\(.*\)-release\.apk/\1/')
-            git commit -m "chore: update SVConfig Android APK to v${VERSION}"
+            git commit -m "chore: update SVConfig Android to v${VERSION}"
             git push
           fi
