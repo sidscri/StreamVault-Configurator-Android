@@ -303,6 +303,14 @@ code{background:var(--c2);padding:1px 5px;border-radius:3px;font-size:10px}
   <div class="pd">Configure remote access, guide data, and mobile proxy for HDHomeRun tuners.</div>
 
   <div class="ss">
+    <h3>General</h3>
+    <div class="sr">
+      <div><div class="sl">Enable HDHomeRun</div><div class="sd">Show the HDHR tab on the Home screen and include tuner channels in the library.</div></div>
+      <div class="tgl on" id="tgl-hdhr-enabled" onclick="tglSet2('hdhr','enabled',this)"></div>
+    </div>
+  </div>
+
+  <div class="ss">
     <h3>Remote / Mobile Access</h3>
     <div class="sr">
       <div><div class="sl">Tailscale / VPN mode</div><div class="sd">Phone connects to HDHR directly over Tailscale subnet routing. Best option — no proxy needed. Mutually exclusive with Remote Relay.</div></div>
@@ -1348,6 +1356,7 @@ function getHdhr(){
   if(h.xmltvProvider===undefined)h.xmltvProvider='schedulesdirect';
   if(h.mobileProxyEnabled===undefined)h.mobileProxyEnabled=false;
   if(h.mobileProxyUrl===undefined)h.mobileProxyUrl='';
+  if(h.enabled===undefined)h.enabled=true;
   return h;
 }
 function tglSet2(section,key,el){
@@ -1381,6 +1390,7 @@ function renderHdhrProviderHint(){
 }
 function renderHdhr(){
   const h=getHdhr();
+  syncTgl('tgl-hdhr-enabled',h.enabled!==false);
   syncTgl('tgl-hdhr-ts',h.tailscaleMode!==false);
   syncTgl('tgl-hdhr-remote',!!h.preferRemote);
   syncTgl('tgl-hdhr-mobileProxy',!!h.mobileProxyEnabled);
