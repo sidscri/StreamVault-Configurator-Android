@@ -685,6 +685,7 @@ code{background:var(--c2);padding:1px 5px;border-radius:3px;font-size:10px}
       <button class="bc" style="flex:1;padding:8px" onclick="niPing()">🔍 Test</button>
       <button class="bc" style="flex:1;padding:8px" id="ni-scan-btn" onclick="niScan()">📶 Scan Network</button>
       <button class="bs" id="ni-push-btn" style="flex:2;padding:8px" onclick="niPush()">📡 Push to Fire TV</button>
+      <button class="bc" id="ni-pull-btn" style="flex:2;padding:8px" onclick="niPull()">📥 Pull from Fire TV</button>
     </div>
 
     <!-- Scan results -->
@@ -1538,6 +1539,36 @@ async function niPush() {
     }
   } catch(e) { niStatus('❌ Error: ' + e.message, false); }
   finally { btn.disabled = false; btn.textContent = '📡 Push to Fire TV'; }
+}
+
+async function niPull() {
+  const ip = niGetIp();
+  if (!ip) { niStatus('Enter a Fire TV IP address first.', false); return; }
+  const btn = gi('ni-pull-btn');
+  btn.disabled = true; btn.textContent = 'Pulling...';
+  niStatus('Pulling config from ' + ip + '...');
+  try {
+    const r = await window.API.networkPull(ip, niGetPort());
+    if (r.ok) {
+      const parsed = JSON.parse(r.raw);
+      if (parsed.type !== 'streamvault-backup') throw new Error('Response is not a StreamVault backup');
+      const b = blank();
+      cfg = {...b, ...parsed, settings: {...b.settings, ...(parsed.settings || {})}};
+      if (!cfg.items) cfg.items = [];
+      if (cfg.settings.plex) cfg.settings.plex = {...b.settings.plex, ...cfg.settings.plex};
+      if (cfg.settings.dvrCfg) cfg.settings.dvrCfg = {...b.settings.dvrCfg, ...cfg.settings.dvrCfg};
+      (cfg.settings.sportLeagues || []).forEach(lg => { lg.cachedGamesByPath = {}; lg.cacheDate = ''; });
+      if (!cfg.settings.myTeams || !cfg.settings.myTeams.length) cfg.settings.myTeams = [];
+      filePath = null; gi('file-label').textContent = 'pulled from ' + ip;
+      renderAll();
+      niSaveIp(ip);
+      niStatus('✅ Config pulled from Fire TV — configurator loaded with device settings.', true);
+      toast('📥 Pulled from Fire TV ✓');
+    } else {
+      niStatus('❌ ' + (r.error || 'Pull failed'), false);
+    }
+  } catch(e) { niStatus('❌ Error: ' + e.message, false); }
+  finally { btn.disabled = false; btn.textContent = '📥 Pull from Fire TV'; }
 }
 
 async function niScan() {

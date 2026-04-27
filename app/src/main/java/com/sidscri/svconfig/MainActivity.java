@@ -136,6 +136,7 @@ public class MainActivity extends Activity {
             "    scanDrives:   wrap('scanDrives')," +
             "    networkPing:  wrap('networkPing')," +
             "    networkInject:wrap('networkInject')," +
+            "    networkPull:  wrap('networkPull')," +
             "    networkScan:  wrap('networkScan')," +
             "    saveBackup:function(args){" +
             "      return new Promise(function(resolve){" +
@@ -332,6 +333,39 @@ public class MainActivity extends Activity {
                     result.put("ok", code == 200);
                     result.put("status", code);
                     result.put("body", body);
+                    resolveJs(cbId, result.toString());
+                } catch (Exception e) {
+                    JSONObject result = new JSONObject();
+                    try {
+                        result.put("ok", false);
+                        result.put("error", e.getMessage() != null ? e.getMessage() : "Connection failed");
+                    } catch (Exception ignored) {}
+                    resolveJs(cbId, result.toString());
+                }
+            }).start();
+        }
+
+        // ── Network: Pull current config from StreamVault (GET /backup) ────
+        @JavascriptInterface
+        public void networkPull(String ip, int port, String cbId) {
+            new Thread(() -> {
+                try {
+                    URL url = new URL("http://" + ip + ":" + port + "/backup");
+                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                    conn.setConnectTimeout(5000);
+                    conn.setReadTimeout(12000);
+                    conn.setRequestMethod("GET");
+                    int code = conn.getResponseCode();
+                    String body = readStream(code == 200 ? conn.getInputStream() : conn.getErrorStream());
+                    conn.disconnect();
+                    JSONObject result = new JSONObject();
+                    result.put("ok", code == 200);
+                    result.put("status", code);
+                    if (code == 200) {
+                        result.put("raw", body);
+                    } else {
+                        result.put("error", "HTTP " + code);
+                    }
                     resolveJs(cbId, result.toString());
                 } catch (Exception e) {
                     JSONObject result = new JSONObject();
