@@ -31,12 +31,51 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Build Release APK
-        run: ./gradlew assembleRelease --no-daemon -Dorg.gradle.wrapper.validateDistributionUrl=false
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > svconfig.keystore
 
-      - name: Upload APK
+      - name: Build Release APK
+        run: |
+          ./gradlew assembleRelease --no-daemon \
+            -Dorg.gradle.wrapper.validateDistributionUrl=false \
+            -Pandroid.injected.signing.store.file=$(pwd)/svconfig.keystore \
+            -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} \
+            -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} \
+            -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
+
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: SVConfig-APK
           path: app/build/outputs/apk/release/SVConfig-*.apk
           retention-days: 30
+
+      - name: Push APK to fdroid repo
+        env:
+          FDROID_TOKEN: ${{ secrets.FDROID_REPO_TOKEN }}
+        run: |
+          APK_PATH=$(ls app/build/outputs/apk/release/SVConfig-*-release.apk)
+          APK_FILE=$(basename "$APK_PATH")
+
+          git clone \
+            "https://x-access-token:${FDROID_TOKEN}@github.com/northstar-works/fdroid.git" \
+            fdroid
+
+          # Replace any older SVConfig APK
+          mkdir -p fdroid/repo
+          rm -f fdroid/repo/SVConfig-*.apk
+          cp "$APK_PATH" fdroid/repo/
+
+          cd fdroid
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add repo/"$APK_FILE"
+
+          if git diff --cached --quiet; then
+            echo "No change, skipping."
+          else
+            VERSION=$(echo "$APK_FILE" | sed 's/SVConfig-\(.*\)-release\.apk/\1/')
+            git commit -m "chore: update SVConfig Android to v${VERSION}"
+            git push
+          fi
